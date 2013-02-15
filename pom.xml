@@ -78,11 +78,11 @@
         </dependency>
 
         <!-- Vestigial depdenencies. -->
-        <dependency>
+        <!--dependency>
             <groupId>edu.washington.cs.knowitall</groupId>
             <artifactId>relink</artifactId>
             <version>1.0.0-SNAPSHOT</version>
-        </dependency>
+        </dependency-->
 
 
         <dependency>
