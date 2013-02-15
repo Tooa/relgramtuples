@@ -13,7 +13,7 @@ package edu.washington.cs.knowitall.relgrams.typers
 
 import scala.collection.JavaConversions._
 
-import edu.washington.cs.knowitall.relink.util.Pairable
+import edu.washington.cs.knowitall.relgrams.utils.Pairable
 import collection.mutable.{HashSet, ArrayBuffer}
 import java.lang.String
 import edu.washington.cs.knowitall.normalization.NormalizedField
@@ -230,7 +230,7 @@ object HeadExtractor {
 
   def lemmatizedArgumentHead(argText:String, argPosTagString:String):Option[String] = {
     try{
-      import edu.washington.cs.knowitall.relink.util.Pairable._
+      import edu.washington.cs.knowitall.relgrams.utils.Pairable._
       val postaggedTokens = (argPosTagString.split(" ").toSeq pairElements argText.split(" ")).map(x => new PostaggedToken(x._1, x._2, offset=0))
       lemmatizedArgumentHead(postaggedTokens)
     }catch{
@@ -250,7 +250,7 @@ object HeadExtractor {
 
   def argumentHead(argText:String, argPosTagString:String):Option[Seq[PostaggedToken]] = {
     try{
-      import edu.washington.cs.knowitall.relink.util.Pairable._
+      import edu.washington.cs.knowitall.relgrams.utils.Pairable._
       val postaggedTokens = (argPosTagString.split(" ").toSeq pairElements argText.split(" ")).map(x => new PostaggedToken(x._1, x._2, offset=0))
       argumentHead(postaggedTokens)
     }catch{

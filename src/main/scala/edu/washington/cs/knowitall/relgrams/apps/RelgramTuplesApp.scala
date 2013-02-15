@@ -23,16 +23,18 @@ object RelgramTuplesApp extends ScoobiApp{
     var inputPath, outputPath = ""
     var wnHome = "/home/niranjan/local/Wordnet3.0"
     var neModelFile = "/Users/niranjan/work/projects/git/scala/argtyping/src/main/resources/english.muc.7class.nodistsim.prop"
+    var maltParserPath="/Users/niranjan/work/projects/git/relgrams/relgramtuples/src/main/resources/engmalt.linear-1.7.mco"
     val parser = new OptionParser() {
       arg("inputPath", "hdfs input path", {str => inputPath = str})
       arg("outputPath", "hdfs output path", { str => outputPath = str })
       opt("wnHome", "wordnet home", { str => wnHome = str })
       opt("neModelFile", "Stanford NE model file.", { str => neModelFile = str })
+      opt("mpp", "maltParserPath", "Malt parser file path.", {str => maltParserPath = str})
     }
 
     if (!parser.parse(args)) return
-    val extractor = new Extractor()
-    val argTyper = new ArgumentsTyper(wnHome, neModelFile)
+    val extractor = new Extractor(maltParserPath)
+    val argTyper = new ArgumentsTyper(neModelFile, wnHome)
     Source.fromFile(inputPath).getLines().foreach(line => {
       extractor.extract(line)
                .filter(confExtr => confExtr._1 > 0.1)
