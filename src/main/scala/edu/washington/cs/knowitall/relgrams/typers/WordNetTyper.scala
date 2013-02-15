@@ -22,6 +22,8 @@ import collection.mutable
 import edu.washington.cs.knowitall.tool.postag.PostaggedToken
 import edu.mit.jwi.morph.WordnetStemmer
 import edu.washington.cs.knowitall.tool.typer.Type
+import org.slf4j.LoggerFactory
+
 //import edu.washington.cs.knowitall.relink.typing.NoType
 import edu.washington.cs.knowitall.ollie.OllieExtractionInstance
 import edu.washington.cs.knowitall.tool.tokenize.Token
@@ -245,7 +247,7 @@ object WordNetTyper{
 }
 class WordNetTyper {
 
-
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   var jwiTools:JwiTools = null
 
@@ -340,14 +342,26 @@ class WordNetTyper {
 
   def addToSynsetClasses(line: String) {
     val stemmedWord = stem(line, 0)
-    val indexedWord = dict.getIndexWord(stemmedWord, POS.NOUN)
-    val wordIDs = indexedWord.getWordIDs.take(1)
-    wordIDs.foreach(wordID => {
-      val synset = dict.getWord(wordID).getSynset
-      types += synset
-      typeSynsetIds += synset.getID.toString
-      synsetClasses += synset -> stemmedWord
-    })
+    try{
+      val indexedWord = dict.getIndexWord(stemmedWord, POS.NOUN)
+      if(indexedWord != null){
+        val wordIDs = indexedWord.getWordIDs.take(1)
+        wordIDs.foreach(wordID => {
+          val synset = dict.getWord(wordID).getSynset
+          types += synset
+          typeSynsetIds += synset.getID.toString
+          synsetClasses += synset -> stemmedWord
+        })
+      }else{
+        logger.error("Failed to find index word for class: " + line)
+      }
+    }catch{
+      case e:Exception => {
+        logger.error("Caught exception finding synset classes for line: " + line)
+        logger.error(e.getStackTraceString)
+      }
+
+    }
   }
 
   def getNonNNPNouns(tokens: Seq[PostaggedToken]):Seq[PostaggedToken] = {
@@ -541,7 +555,7 @@ class WordNetTyper {
       var i = 1
       val matchingTypes = if(filterTypes) st.intersect(types) else st
       matchingTypes.foreach( synset => {
-        outTypes += new edu.washington.cs.knowitall.tool.typer.Type(synsetClasses.getOrElse(synset, "NA") + ";"+ synset.getWords.map(s => s.getLemma).mkString("_"), WordNetTyper.WordNet, interval, matchingString)
+        outTypes += new Type(synsetClasses.getOrElse(synset, "NA") + ";"+ synset.getWords.map(s => s.getLemma).mkString("_"), WordNetTyper.WordNet, interval, matchingString)
         //val wtype = new Type(synsetClasses.getOrElse(synset, "NA") + ";"+ synset.getWords.map(s => s.getLemma).mkString("_"), synset.getID.getOffset.toString, WordNetTyper.WordNet, i.toDouble / 100) //.getWords.map(s => s.getLemma.replace("_", " "))
         //wtype.sourceText = matchingString
         //outTypes += wtype

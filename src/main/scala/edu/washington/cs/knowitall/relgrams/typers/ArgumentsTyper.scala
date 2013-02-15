@@ -14,25 +14,28 @@ import edu.washington.cs.knowitall.tool.typer.Type
  * To change this template use File | Settings | File Templates.
  */
 
-case class TypedExtractionInstance(extractionInstance:OllieExtractionInstance, arg1Types:Iterable[Type], arg2Types:Iterable[Type])
+case class TypedExtractionInstance(extractionInstance:OllieExtractionInstance,
+                                   arg1Head:Seq[Token], arg2Head:Seq[Token],
+                                   arg1Types:Iterable[Type], arg2Types:Iterable[Type])
 
-class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String) {
+class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wordnetTypesFile:String) {
 
   val neTyper = new NETyper(neModelFile)
-  val wnTyper = new WordNetTyper(wordnetLocation, "", 0::1::2::Nil, 3, true, true)
+  val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, 0::1::2::Nil, 3, true, true)
 
   def assignTypes(extractionInstance:OllieExtractionInstance):Option[TypedExtractionInstance] = {
     val tokens = extractionInstance.sentence.nodes.toSeq
     val neTypes = neTyper.assignTypesToSentence(tokens)
+    neTypes.foreach(net => println("NEType: " + net))
     val arg1Tokens = extractionInstance.extr.arg1.nodes.toSeq
-    val arg2Tokens = extractionInstance.extr.arg1.nodes.toSeq
+    val arg2Tokens = extractionInstance.extr.arg2.nodes.toSeq
     val arg1HeadTokensOption = HeadExtractor.argumentHead(arg1Tokens)
     val arg2HeadTokensOption = HeadExtractor.argumentHead(arg2Tokens)
     (arg1HeadTokensOption, arg2HeadTokensOption) match {
       case (Some(arg1HeadTokens:Seq[PostaggedToken]), Some(arg2HeadTokens:Seq[PostaggedToken])) => {
         val arg1Types = assignTypes(arg1HeadTokens, neTypes)
         val arg2Types = assignTypes(arg2HeadTokens, neTypes)
-        Some(new TypedExtractionInstance(extractionInstance, arg1Types, arg2Types))
+        Some(new TypedExtractionInstance(extractionInstance, arg1HeadTokens, arg2HeadTokens, arg1Types, arg2Types))
       }
       case _ => {
         None
@@ -50,7 +53,14 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String) {
 
   private def assignTypes(types:Seq[Type], tokens:Seq[Token]):Iterable[Type] = {
     val span = TypersUtil.span(tokens)
-    types.filter(typ => typ.interval.subset(span))
+    //println("Arg: " +tokens.mkString(","))
+    //println("Arg span: " + span.start + " to " + span.end)
+    types.filter(typ => {
+      val isSubset = typ.interval.subset(span)
+      //println("type: " + typ)
+      //println("hasInterval: " + typ.interval + " isSubset of: " + isSubset)
+      isSubset
+    })
   }
 
 

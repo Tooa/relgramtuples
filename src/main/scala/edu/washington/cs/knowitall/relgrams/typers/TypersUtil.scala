@@ -16,5 +16,9 @@ object TypersUtil {
     val (start:Int, end:Int) = startEnd(tokens)
     Interval.open(start, end)
   }
-  def startEnd(tokens:Seq[Token]) = tokens.map(t => (t.interval.start, t.interval.end)).maxBy(x => (x._1, -x._2))
+  def startEnd(tokens:Seq[Token]) = {
+    val start = tokens.map(t => t.interval.start).min
+    val end = tokens.map(t => t.interval.end).max
+    (start, end)
+  }
 }
