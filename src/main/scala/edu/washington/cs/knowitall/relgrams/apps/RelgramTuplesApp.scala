@@ -76,7 +76,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
             addKeyValueForArgTypes("arg2", arg2Types, context, arg2Head, relHead)
             addKeyValueForArgTypes("arg", (arg2Types++arg1Types).toSet, context, arg2Head, relHead)
           }
-          case _ => logger.error("Failed to extract head word for extrInstance: " + extrInstance.extr.text)
+          case _ => logger.error("Failed to extract head word for extrInstance: " + extrInstance.extr.arg1.nodes.seq.toString + " and " + extrInstance.extr.arg2.nodes.seq.toString)
         }
       })
     }
