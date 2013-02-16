@@ -277,11 +277,6 @@ object HeadExtractor {
       subTokens = tokens
     }
 
-    val matchWord = "southeast"
-
-    if(argString.contains(matchWord)){
-      println("After NP of NP: " + argString + " --> " + subTokens.mkString(","))
-    }
 
     var returnTokens = removeTokensBeforeAppositive(subTokens) //Jan 30    -- should fix Fazil 's rank to rank instead of Fazil.
     if (!returnTokens.isEmpty){
@@ -293,18 +288,12 @@ object HeadExtractor {
       subTokens = returnTokens
     }
 
-    if(argString.contains(matchWord)){
-      println("After punctuation: " + subTokens.mkString(","))
-    }
 
     returnTokens = removeTokensAfterConjunctionsOrPrepositions(subTokens) //Check this. Why isn't this filtering out which led to....
     if(!returnTokens.isEmpty){
       subTokens = returnTokens
     }
 
-    if(argString.contains(matchWord)){
-      println("After conjunctions or prepositions: " + subTokens.mkString(","))
-    }
 
 
     def allowedToken(p:PostaggedToken) = !p.postag.startsWith("W") &&
@@ -319,9 +308,6 @@ object HeadExtractor {
     }
 
 
-    if(argString.contains(matchWord)){
-      println("After truncate: " + subTokens.mkString(","))
-    }
 
 
     /**
