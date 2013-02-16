@@ -18,15 +18,15 @@ case class TypedExtractionInstance(extractionInstance:OllieExtractionInstance,
                                    arg1Head:Seq[Token], arg2Head:Seq[Token],
                                    arg1Types:Iterable[Type], arg2Types:Iterable[Type])
 
-class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wordnetTypesFile:String) {
+class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wordnetTypesFile:String, val wnSenses:Int) {
 
   val neTyper = new NETyper(neModelFile)
-  val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, 0::1::2::Nil, 3, true, false)
-
+  val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, (1 until wnSenses+1), 3, true, false)
+  val prnTyper = new PronounTyper
   def assignTypes(extractionInstance:OllieExtractionInstance):Option[TypedExtractionInstance] = {
     val tokens = extractionInstance.sentence.nodes.toSeq
     val neTypes = neTyper.assignTypesToSentence(tokens)
-    neTypes.foreach(net => println("NEType: " + net))
+    //neTypes.foreach(net => println("NEType: " + net))
     val arg1Tokens = extractionInstance.extr.arg1.nodes.toSeq
     val arg2Tokens = extractionInstance.extr.arg2.nodes.toSeq
     val arg1HeadTokensOption = HeadExtractor.argumentHead(arg1Tokens)
@@ -48,7 +48,8 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
     val argHeadText = argHeadTokens.map(token => token.string).mkString(" ")
     val wnArgTypes = wnTyper.assignTypes(argHeadText, argHeadTokens)
     val neArgTypes = assignTypes(neTypes, argHeadTokens)
-    wnArgTypes ++ neArgTypes
+    val prnTypes = prnTyper.assignTypes(argHeadTokens)
+    wnArgTypes ++ neArgTypes ++ prnTypes
   }
 
   private def assignTypes(types:Seq[Type], tokens:Seq[Token]):Iterable[Type] = {

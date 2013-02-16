@@ -2,10 +2,11 @@ package edu.washington.cs.knowitall.relgrams.typers
 
 import java.io.{BufferedInputStream, FileInputStream, File}
 import edu.washington.cs.knowitall.common.Resource._
-import edu.washington.cs.knowitall.tool.typer.StanfordNer
+import edu.washington.cs.knowitall.tool.typer.{Type, StanfordNer}
 import edu.stanford.nlp.ie.crf.CRFClassifier
 import java.util.zip.GZIPInputStream
 import edu.washington.cs.knowitall.tool.tokenize.Token
+import edu.washington.cs.knowitall.tool.postag.PostaggedToken
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,6 +22,18 @@ object NETyper{
     }
   }
   val defaultURL = "/Users/niranjan/work/projects/git/scala/argtyping/src/main/resources/english.muc.7class.nodistsim.prop"
+
+}
+class PronounTyper{
+  def assignTypes(argTokens:Seq[PostaggedToken]) = {
+    if (argTokens.size == 1 && argTokens(0).isPronoun){
+      new Type("person:Pronoun", "PRN", argTokens(0).interval, argTokens(0).string)::Nil
+    }else{
+      Iterable[Type]()
+    }
+
+
+  }
 
 }
 class NETyper(val modelFile:String) {

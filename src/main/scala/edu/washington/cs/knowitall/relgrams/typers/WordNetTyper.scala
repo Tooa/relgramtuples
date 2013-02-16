@@ -541,11 +541,11 @@ class WordNetTyper {
     val span = TypersUtil.span(tokens)
 
     val outTypes = findMatchingTypes(matchString, hypernyms, retainUnmappedTypes, span)
-    if (outTypes.isEmpty){
-      return NoType::Nil
-    }else{
-      return outTypes.toSeq
-    }
+    //if (outTypes.isEmpty){
+    //  return NoType::Nil
+    //}else{
+    return outTypes
+    //}
   }
 
 
@@ -555,14 +555,14 @@ class WordNetTyper {
       var i = 1
       val matchingTypes = if(filterTypes) st.intersect(types) else st
       matchingTypes.foreach( synset => {
-        outTypes += new Type(synsetClasses.getOrElse(synset, "NA") + ";"+ synset.getWords.map(s => s.getLemma).mkString("_"), WordNetTyper.WordNet, interval, matchingString)
-        //val wtype = new Type(synsetClasses.getOrElse(synset, "NA") + ";"+ synset.getWords.map(s => s.getLemma).mkString("_"), synset.getID.getOffset.toString, WordNetTyper.WordNet, i.toDouble / 100) //.getWords.map(s => s.getLemma.replace("_", " "))
-        //wtype.sourceText = matchingString
-        //outTypes += wtype
+        val className = synsetClasses.getOrElse(synset, "QQQQ")
+        if(!className.equals("QQQQ")){
+          outTypes += new Type(className, WordNetTyper.WordNet, interval, matchingString)
+        }
       })
       i = i + 1
     })
-    if(retainUnmappedTypes && outTypes.isEmpty){
+    /**if(retainUnmappedTypes && outTypes.isEmpty){
       stream.iterator.filter(st => st.size > 0).foreach(st => {
         var i = 1
         st.foreach( synset => {
@@ -570,7 +570,7 @@ class WordNetTyper {
         })
         i = i + 1
       })
-    }
+    } */
     return outTypes
   }
   def assignTypes(text:String, tokens:Seq[PostaggedToken]) = {//er: OllieExtractionInstance, retainUnmappedTypes:Boolean): (scala.Seq[Type], scala.Seq[Type]) = {

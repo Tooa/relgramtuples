@@ -1,5 +1,6 @@
 package edu.washington.cs.knowitall.relgrams.apps
 
+import scala.collection.JavaConversions._
 import scopt.mutable.OptionParser
 import edu.washington.cs.knowitall.relgrams.typers.{TypedExtractionInstance, ArgumentsTyper}
 import edu.washington.cs.knowitall.relgrams.extractors.Extractor
@@ -23,22 +24,33 @@ import org.apache.hadoop.mapreduce.{Reducer, Mapper, Job}
  * To change this template use File | Settings | File Templates.
  */
 
+class RelgramReducer extends Reducer[Text, Text, Text, Text] {
+  val logger = LoggerFactory.getLogger(this.getClass)
+  override def setup(context:Reducer[Text, Text, Text, Text] #Context){
+
+  }
+
+  override def reduce(key: Text,
+                      values: java.lang.Iterable[Text],
+                      context:Reducer[Text,Text,Text,Text]#Context) {
+    val size = values.size
+    context.write(new Text(key), new Text(size.toString))
+  }
+}
+
 class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
   val logger = LoggerFactory.getLogger(this.getClass)
   var extractor:Extractor = null
   var argTyper:ArgumentsTyper = null
 
   override def setup(context:Mapper[LongWritable,Text, Text, Text] #Context){
-    //maxDocumentSize = context.getConfiguration.getInt("maxDocumentSize",200)
-    //partitionId = context.getConfiguration.getInt("mapred.task.partition", 0)
     val maltParserPath = context.getConfiguration.get("maltParserPath", "NA")
     val neModelFile = context.getConfiguration.get("neModelFile", "NA")
     val wnHome = context.getConfiguration.get("wnHome", "NA")
     val wnTypesFile = context.getConfiguration.get("wnTypesFile", "NA")
+    val numSenses = context.getConfiguration.getInt("numWNSenses", 1)
     extractor = new Extractor(maltParserPath)
-    argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile)
-
-
+    argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile, numSenses)
   }
 
   override def map(key: LongWritable,
@@ -71,10 +83,10 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
   }
   def addKeyValueForArgTypes(n:String, argTypes: Iterable[String], context: Mapper[LongWritable, Text, Text, Text]#Context, argHead: String, relHead: String) {
     argTypes.foreach(atype => {
-      val argKey = "%s\t%s".format(n, atype)
-      context.write(new Text(argKey), new Text(argHead))
-      val argRelKey = "%s\t%s\t%s".format(n, atype, relHead)
-      context.write(new Text(argRelKey), new Text(argHead))
+      val argKey = "%s\t%s\t%s".format(n, atype, argHead)
+      context.write(new Text(argKey), new Text(""))
+      val argRelKey = "%s\t%s\t%s\t%s".format(n + "rel", atype, relHead, argHead)
+      context.write(new Text(argRelKey), new Text(""))
     })
   }
 }
@@ -137,7 +149,8 @@ object RelgramTuplesHadoop{
     //Input: <docname, <extraction sentenceWords record1__DOCEXTR_DELIM__extraction sentenceWords record2__DOCEXTR_DELIM__extraction sentenceWords record3>
     //Output: List of rel-view grams <vType, first + second + hashes + count>
     ejob setMapperClass classOf[RelgramTuplesMapper]
-    ejob.setNumReduceTasks(0)
+    ejob setReducerClass  classOf[RelgramReducer]
+    ejob.setNumReduceTasks(1)
 
     FileInputFormat.addInputPath(ejob, new Path(inputPath))
     FileOutputFormat.setOutputPath(ejob, new Path(outputPath))
@@ -169,7 +182,7 @@ object RelgramTuplesApp{
 
     if (!parser.parse(args)) return
     val extractor = new Extractor(maltParserPath)
-    val argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile)
+    val argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile, 1)
     val writer = new PrintWriter(outputPath, "utf-8")
     Source.fromFile(inputPath).getLines().foreach(line => {
       val splits = line.split("\t")
