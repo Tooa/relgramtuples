@@ -56,11 +56,13 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
   override def map(key: LongWritable,
                    value: Text,
                    context: Mapper[LongWritable,Text, Text, Text] #Context) {
+   try{
     val splits = value.toString.split("\t")
-    if(splits.size > 2){
+    if(splits.size > 5){
       val docid = splits(3)
       val sentid = splits(4)
       val sentence = splits(5)
+
       extractor.extract(sentence)
         .filter(confExtr => confExtr._1 > 0.1)
         .map(ce => ce._2)
@@ -80,6 +82,12 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
         }
       })
     }
+  }catch {
+     case e:Exception => {
+       logger.error("Caught exception handling line: " + value.toString)
+       logger.error(e.getStackTraceString)
+     }
+   }
   }
   def addKeyValueForArgTypes(n:String, argTypes: Iterable[String], context: Mapper[LongWritable, Text, Text, Text]#Context, argHead: String, relHead: String) {
     argTypes.foreach(atype => {
