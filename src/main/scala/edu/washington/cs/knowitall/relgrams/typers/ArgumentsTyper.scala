@@ -21,6 +21,7 @@ case class TypedExtractionInstance(extractionInstance:OllieExtractionInstance,
 class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wordnetTypesFile:String, val wnSenses:Int) {
 
   val neTyper = new NETyper(neModelFile)
+  HeadExtractor.setWnHome(wordnetLocation)
   val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, (1 until wnSenses+1), 3, true, false)
   val prnTyper = new PronounTyper
   def assignTypes(extractionInstance:OllieExtractionInstance):Option[TypedExtractionInstance] = {
