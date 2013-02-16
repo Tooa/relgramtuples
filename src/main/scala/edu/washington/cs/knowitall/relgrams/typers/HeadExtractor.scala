@@ -182,7 +182,7 @@ object HeadExtractor {
     }
   }
 
-  var wnHome = "/Users/niranjan/work/local/wordnet3.0"
+  var wnHome = "/home/niranjan/local/wordnet3.0"
   var wnTypers = new mutable.HashMap[Thread, WordNetTyper] with mutable.SynchronizedMap[Thread, WordNetTyper]
   def setWnHome(wnHomeInp:String){
     wnHome = wnHomeInp
