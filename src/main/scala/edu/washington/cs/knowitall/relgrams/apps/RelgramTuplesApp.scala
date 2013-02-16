@@ -58,9 +58,9 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
                    context: Mapper[LongWritable,Text, Text, Text] #Context) {
     val splits = value.toString.split("\t")
     if(splits.size > 2){
-      val docid = splits(0)
-      val sentid = splits(1)
-      val sentence = splits(2)
+      val docid = splits(3)
+      val sentid = splits(4)
+      val sentence = splits(5)
       extractor.extract(sentence)
         .filter(confExtr => confExtr._1 > 0.1)
         .map(ce => ce._2)
