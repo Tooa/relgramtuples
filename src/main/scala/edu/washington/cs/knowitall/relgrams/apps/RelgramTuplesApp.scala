@@ -104,14 +104,14 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
 
   def exportTypeSelectionFormat(typedExtrInstance: TypedExtractionInstance, context: Mapper[LongWritable, Text, Text, Text]#Context) {
     val arg1Head = typedExtrInstance.arg1Head.map(h => h.string).mkString(" ")
-    val relHead = typedExtrInstance.extractionInstance.extr.rel.text
+    val relHead = typedExtrInstance.relHead.map(h => h.string).mkString(" ")//typedExtrInstance.extractionInstance.extr.rel.text
     val arg2Head = typedExtrInstance.arg2Head.map(h => h.string).mkString(" ")
     val arg1Types = typedExtrInstance.arg1Types.map(a1type => a1type.name.split(";").head)
     val arg2Types = typedExtrInstance.arg2Types.map(a2type => a2type.name.split(";").head)
-    addKeyValueForArgTypes("arg1", arg1Types, context, arg1Head, relHead)
-    addKeyValueForArgTypes("arg2", arg2Types, context, arg2Head, relHead)
-    addKeyValueForArgTypes("arg", arg1Types, context, arg1Head, relHead)
-    addKeyValueForArgTypes("arg", arg2Types, context, arg2Head, relHead)
+    addKeyValueForArgTypes("arg1", arg1Types, arg1Head, relHead, context)
+    addKeyValueForArgTypes("arg2", arg2Types, arg2Head, relHead, context)
+    addKeyValueForArgTypes("arg", arg1Types, arg1Head, relHead, context)
+    addKeyValueForArgTypes("arg", arg2Types, arg2Head, relHead, context)
   }
 
   //sid sentence (orig) (head) arg1types arg2types
@@ -130,7 +130,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
     val value = "%s\t%s\t%s\t%s\t%s".format(template, origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
     context.write(new Text(key), new Text(value))
  }
-  def addKeyValueForArgTypes(n:String, argTypes: Iterable[String], context: Mapper[LongWritable, Text, Text, Text]#Context, argHead: String, relHead: String) {
+  def addKeyValueForArgTypes(n:String, argTypes: Iterable[String], argHead: String, relHead: String, context: Mapper[LongWritable, Text, Text, Text]#Context) {
     argTypes.foreach(atype => {
       val argKey = "%s\t%s\t%s".format(n, atype, argHead)
       context.write(new Text(argKey), new Text(""))
