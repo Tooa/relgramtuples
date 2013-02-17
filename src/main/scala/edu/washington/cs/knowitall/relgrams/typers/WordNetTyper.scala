@@ -90,7 +90,23 @@ object WordNetTyper{
 
   def main(args:Array[String]){
     //val wnTyper = new WordnetTyper("/Users/niranjan/work/local/wordnet3.0", "/Users/niranjan/work/projects/git/relgrams/relinkhadoop/156classes.txt", 0::1::2::Nil, true)
-    val wnTyper = new WordNetTyper("/Users/niranjan/work/local/wordnet3.0", "", 0::1::2::Nil, 3, true, true)
+    val wnTyper = new WordNetTyper("/Users/niranjan/work/local/wordnet3.0", "src/main/resources/wordnet-classes-large.txt", 0::1::2::Nil, 3, true, true)
+
+
+
+    var ptokens = new PostaggedToken("NN", "plan", 0)::Nil
+    var wtypes = wnTyper.assignTypes("plan", ptokens)
+    //var wtypes = wnTyper.getWordnetTypes(ptokens, 1::2::3::Nil, 3, false)
+    println("Wordnet Types for plan: \n" + wtypes.mkString("\n"))
+
+    ptokens = new PostaggedToken("NN", "antenna", 0)::Nil
+    wtypes = wnTyper.assignTypes("antenna", ptokens)
+    //wtypes = wnTyper.getWordnetTypes(ptokens, 1::2::3::Nil, 3, false)
+    println("Wordnet Types for ambassador: \n" + wtypes.mkString("\n"))
+
+
+    exit(-1)
+
     var ptoken = new PostaggedToken("NN", "Bank", 0)
     var isGroup = wnTyper.isGroupQuantityAmountNumberOrPart(ptoken)//, 0::1::2::Nil, 3, false)
     println("Is Group: " + isGroup)
@@ -101,8 +117,8 @@ object WordNetTyper{
 
     exit(-1)
 
-    var ptokens = new PostaggedToken("NN", "Bank", 0)::Nil
-    var wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    ptokens = new PostaggedToken("NN", "Bank", 0)::Nil
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
     println("Wordnet Types for Bank: \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("NN", "bomb", 0)::Nil

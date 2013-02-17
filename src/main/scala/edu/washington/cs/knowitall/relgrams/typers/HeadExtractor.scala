@@ -24,6 +24,7 @@ import scala.Some
 
 import edu.washington.cs.knowitall.tool.stem.MorphaStemmer
 import io.Source
+import edu.washington.cs.knowitall.tool.tokenize.Token
 
 /**
  * Created by IntelliJ IDEA.
@@ -85,6 +86,15 @@ object HeadExtractor {
   stopwordsForRelations += "whose"
   stopwordsForRelations += "'s"
 
+  def relHead(tokens:Seq[PostaggedToken]) = tokens.filter(token => !stopTagsForRelation.contains(token.postag) && stopwordsForRelations.contains(token.string))
+  def relHeadString(tokens:Seq[PostaggedToken]):Option[String] = {
+    val headTokens = relHead(tokens)
+    if(headTokens.isEmpty == false){
+      Some(headTokens.mkString(" "))
+    }else{
+      None
+    }
+  }
   def headWordsForRelation(relText:String, relPosTagString:String): String = {
     headWordsForRelation(relText.split(" "), relPosTagString.split(" ")) match{
       case Some(x:String) => x
