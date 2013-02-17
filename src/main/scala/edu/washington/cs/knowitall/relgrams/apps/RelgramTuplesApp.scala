@@ -57,6 +57,9 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
     val numSenses = context.getConfiguration.getInt("numWNSenses", 1)
     relgramFormat = context.getConfiguration.getBoolean("relgramFormat", true)
     typeSelectionFormat = context.getConfiguration.getBoolean("typeSelectionFormat", false)
+    logger.info("Exporting type selection format?: " + typeSelectionFormat)
+    logger.info("Exporting relgram format?: " + relgramFormat)
+
     extractor = new Extractor(maltParserPath)
     argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile, numSenses)
   }
@@ -84,7 +87,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
               val template = extrInstance.pattern.pattern.toString()
               exportRelgramTuples(docid, sentid, sentence, eid, template, typedExtrInstance, context)
             }else if(typeSelectionFormat){
-              logger.info("Exporting type selection format: ")
+
               exportTypeSelectionFormat(typedExtrInstance, context)
             }
           }
