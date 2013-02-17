@@ -453,11 +453,13 @@ class WordNetTyper {
 
    */
   def findIndexedWord(tokens:Seq[PostaggedToken]):(String, Option[IIndexWord]) = {
-    val word = dict.getIndexWord(tokens.mkString(" "), POS.NOUN)
-    if(word != null){
-      return (tokens.map(token => token.string).mkString(" "), Some(word))
-    }else{
-      return findNoun(tokens)
+    if(!tokens.isEmpty){
+      val word = dict.getIndexWord(tokens.mkString(" "), POS.NOUN)
+      if(word != null){
+        return (tokens.map(token => token.string).mkString(" "), Some(word))
+      }else{
+        return findNoun(tokens)
+      }
     }
     return ("", None)
   }
@@ -554,13 +556,7 @@ class WordNetTyper {
   def getWordnetTypes(tokens:Seq[PostaggedToken], senses:Iterable[Int], hypHeight:Int, retainUnmappedTypes:Boolean):Iterable[Type] = {
     val (matchString:String, hypernyms:Seq[Set[ISynset]]) = hypernymStream(tokens, senses)
     val span = TypersUtil.span(tokens)
-
-    val outTypes = findMatchingTypes(matchString, hypernyms, retainUnmappedTypes, span)
-    //if (outTypes.isEmpty){
-    //  return NoType::Nil
-    //}else{
-    return outTypes
-    //}
+    return findMatchingTypes(matchString, hypernyms, retainUnmappedTypes, span)
   }
 
 
@@ -570,8 +566,8 @@ class WordNetTyper {
       var i = 1
       val matchingTypes = if(filterTypes) st.intersect(types) else st
       matchingTypes.foreach( synset => {
-        val className = synsetClasses.getOrElse(synset, "QQQQ")
-        if(!className.equals("QQQQ")){
+        val className = synsetClasses.getOrElse(synset, "NA")
+        if(!className.equals("NA")){
           outTypes += new Type(className, WordNetTyper.WordNet, interval, matchingString)
         }
       })

@@ -251,10 +251,10 @@ object HeadExtractor {
     }
   }
 
-  private def lemmatize(tokens: Seq[PostaggedToken]): String = tokens.map(token => stem(token.string, token.postag)).mkString(" ")
+  def lemmatize(tokens: Seq[PostaggedToken]) = tokens.map(token => new PostaggedToken(token.postag, stem(token.string, token.postag), token.offset))//stem(token.string, token.postag))
 
   def lemmatizedArgumentHead(tokens:Seq[PostaggedToken]):Option[String] = argumentHead(tokens) match {
-    case Some(headTokens:Seq[PostaggedToken]) => Some(lemmatize(headTokens))
+    case Some(headTokens:Seq[PostaggedToken]) => Some(lemmatize(headTokens).mkString(" "))
     case None => None
   }
 
@@ -273,7 +273,7 @@ object HeadExtractor {
 
   def argumentHead(tokens:Seq[PostaggedToken]):Option[Seq[PostaggedToken]] = {
 
-    val argString = tokens.map(token => token.string).mkString(" ")
+    //val argString = tokens.map(token => token.string).mkString(" ")
     var subTokens = tokens.take(tokens.indexWhere(p => p.postag.startsWith("W")))
     /**val w_index = tokens.indexWhere(p => p.postag.startsWith("W"))
     subTokens = if(w_index > 0){

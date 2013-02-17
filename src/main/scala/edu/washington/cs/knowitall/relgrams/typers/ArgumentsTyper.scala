@@ -35,7 +35,6 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
     val arg1Tokens = extractionInstance.extr.arg1.nodes.toSeq
     val arg2Tokens = extractionInstance.extr.arg2.nodes.toSeq
     val relTokens = extractionInstance.extr.rel.nodes.toSeq
-
     val arg1HeadTokensOption = HeadExtractor.argumentHead(arg1Tokens)
     val arg2HeadTokensOption = HeadExtractor.argumentHead(arg2Tokens)
     var relHeadTokens = HeadExtractor.relHead(relTokens)
@@ -44,7 +43,12 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
       case (Some(arg1HeadTokens:Seq[PostaggedToken]), Some(arg2HeadTokens:Seq[PostaggedToken])) => {
         val arg1Types = assignTypes(arg1HeadTokens, neTypes)
         val arg2Types = assignTypes(arg2HeadTokens, neTypes)
-        Some(new TypedExtractionInstance(extractionInstance, arg1HeadTokens, relHeadTokens, arg2HeadTokens, arg1Types, arg2Types))
+
+        Some(new TypedExtractionInstance(extractionInstance,
+          HeadExtractor.lemmatize(arg1HeadTokens),
+          HeadExtractor.lemmatize(relHeadTokens),
+          HeadExtractor.lemmatize(arg2HeadTokens),
+          arg1Types, arg2Types))
       }
       case _ => {
         None
@@ -54,23 +58,24 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
 
 
   private def assignTypes(argHeadTokens: Seq[PostaggedToken], neTypes: List[Type]): Iterable[Type] = {
-    val argHeadText = argHeadTokens.map(token => token.string).mkString(" ")
-    val wnArgTypes = wnTyper.assignTypes(argHeadText, argHeadTokens)
+
+    //Get wordnet types
+    val wordNetHead = argHeadTokens.filter(p => p.isCommonNoun)
+    val wordNetHeadText = wordNetHead.map(x => x.string).mkString(" ")
+    val wnArgTypes = if(!wordNetHead.isEmpty) wnTyper.assignTypes(wordNetHeadText, wordNetHead) else Iterable[Type]()
+
+    //Named entity types
     val neArgTypes = assignTypes(neTypes, argHeadTokens)
+
+    //Pronoun types
     val prnTypes = prnTyper.assignTypes(argHeadTokens)
+
     wnArgTypes ++ neArgTypes ++ prnTypes
   }
 
   private def assignTypes(types:Seq[Type], tokens:Seq[Token]):Iterable[Type] = {
     val span = TypersUtil.span(tokens)
-    //println("Arg: " +tokens.mkString(","))
-    //println("Arg span: " + span.start + " to " + span.end)
-    types.filter(typ => {
-      val isSubset = typ.interval.subset(span)
-      //println("type: " + typ)
-      //println("hasInterval: " + typ.interval + " isSubset of: " + isSubset)
-      isSubset
-    })
+    types.filter(typ => typ.interval.subset(span))
   }
 
 

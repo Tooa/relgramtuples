@@ -19,6 +19,7 @@ import edu.washington.cs.knowitall.tool.tokenize.Token
 import edu.washington.cs.knowitall.tool.typer.Type
 import edu.washington.cs.knowitall.openparse.extract.TemplateExtractor
 import edu.washington.cs.knowitall.ollie.OllieExtractionInstance
+import edu.washington.cs.knowitall.relgrams.utils.SentenceHasher
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,7 +29,7 @@ import edu.washington.cs.knowitall.ollie.OllieExtractionInstance
  * To change this template use File | Settings | File Templates.
  */
 
-class RelgramReducer extends Reducer[Text, Text, Text, Text] {
+class ValuesCounterReducer extends Reducer[Text, Text, Text, Text] {
   val logger = LoggerFactory.getLogger(this.getClass)
   override def setup(context:Reducer[Text, Text, Text, Text] #Context){
 
@@ -40,6 +41,113 @@ class RelgramReducer extends Reducer[Text, Text, Text, Text] {
     val size = values.size
     context.write(new Text(key), new Text(size.toString))
   }
+}
+
+class DocTuplesReducer extends Reducer[Text, Text, Text, Text] {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+  override def setup(context:Reducer[Text, Text, Text, Text] #Context){
+
+  }
+
+  override def reduce(key: Text,
+                      values: java.lang.Iterable[Text],
+                      context:Reducer[Text,Text,Text,Text]#Context) {
+
+    val valuesString = values.map(x => x.toString).mkString("_TUPLE_SEP_")
+    context.write(new Text(key), new Text(valuesString))
+  }
+}
+
+
+class IdentityReducer extends Reducer[Text, Text, Text, Text] {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+  override def setup(context:Reducer[Text, Text, Text, Text] #Context){
+
+  }
+
+  override def reduce(key: Text,
+                      values: java.lang.Iterable[Text],
+                      context:Reducer[Text,Text,Text,Text]#Context) {
+    values.foreach(value => context.write(new Text(key), new Text(value)))
+  }
+}
+
+
+class TypeSelectionReducer extends ValuesCounterReducer
+
+class RelgramTuplesReducer extends IdentityReducer
+
+class TypeSelectionMapper extends Mapper[LongWritable, Text, Text, Text] {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+  var extractor:Extractor = null
+  var argTyper:ArgumentsTyper = null
+
+  override def setup(context:Mapper[LongWritable,Text, Text, Text] #Context){
+    val maltParserPath = context.getConfiguration.get("maltParserPath", "NA")
+    val neModelFile = context.getConfiguration.get("neModelFile", "NA")
+    val wnHome = context.getConfiguration.get("wnHome", "NA")
+    val wnTypesFile = context.getConfiguration.get("wnTypesFile", "NA")
+    val numSenses = context.getConfiguration.getInt("numWNSenses", 1)
+
+    extractor = new Extractor(maltParserPath)
+    argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile, numSenses)
+  }
+
+  override def map(key: LongWritable,
+                   value: Text,
+                   context: Mapper[LongWritable,Text, Text, Text] #Context) {
+    try{
+      val splits = value.toString.split("\t")
+      if(splits.size > 4){
+        val docid = splits(2)
+        val sentid = splits(3)
+        val sentence = splits(4)
+        val sortedExtrInstances = extractor.extract(sentence)
+          .filter(confExtr => confExtr._1 > 0.1)
+          .map(confExtr => confExtr._2)
+          .toSeq
+          .sorted(new OllieExtractionOrdering)
+        sortedExtrInstances.foreach(extrInstance => {
+          argTyper.assignTypes(extrInstance) match {
+            case Some(typedExtrInstance:TypedExtractionInstance) => exportTypeSelectionFormat(typedExtrInstance, context)
+            case _ => //logger.error("Failed to extract head word for extrInstance: " + extrInstance.extr.arg1.nodes.seq.toString + " and " + extrInstance.extr.arg2.nodes.seq.toString)
+          }
+        })
+      }else{
+        logger.error("Skipping line with < 6 fields: " + splits.size + " and string: " + splits.mkString("_,_"))
+      }
+    }catch {
+      case e:Exception => {
+        logger.error("Caught exception handling line: " + value.toString)
+        logger.error(e.getStackTraceString)
+      }
+    }
+  }
+
+  def exportTypeSelectionFormat(typedExtrInstance: TypedExtractionInstance, context: Mapper[LongWritable, Text, Text, Text]#Context) {
+    val arg1Head = typedExtrInstance.arg1Head.map(h => h.string).mkString(" ")
+    val relHead = typedExtrInstance.relHead.map(h => h.string).mkString(" ")//typedExtrInstance.extractionInstance.extr.rel.text
+    val arg2Head = typedExtrInstance.arg2Head.map(h => h.string).mkString(" ")
+    val arg1Types = typedExtrInstance.arg1Types.map(a1type => a1type.name.split(";").head)
+    val arg2Types = typedExtrInstance.arg2Types.map(a2type => a2type.name.split(";").head)
+    addKeyValueForArgTypes("arg1", arg1Types, arg1Head, relHead, context)
+    addKeyValueForArgTypes("arg2", arg2Types, arg2Head, relHead, context)
+    addKeyValueForArgTypes("arg", arg1Types, arg1Head, relHead, context)
+    addKeyValueForArgTypes("arg", arg2Types, arg2Head, relHead, context)
+  }
+
+  def addKeyValueForArgTypes(n:String, argTypes: Iterable[String], argHead: String, relHead: String, context: Mapper[LongWritable, Text, Text, Text]#Context) {
+    argTypes.foreach(atype => {
+      val argKey = "%s\t%s\t%s".format(n, atype, argHead)
+      context.write(new Text(argKey), new Text(""))
+      val argRelKey = "%s\t%s\t%s\t%s".format(n + "rel", atype, relHead, argHead)
+      context.write(new Text(argRelKey), new Text(""))
+    })
+  }
+
 }
 
 class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
@@ -55,10 +163,6 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
     val wnHome = context.getConfiguration.get("wnHome", "NA")
     val wnTypesFile = context.getConfiguration.get("wnTypesFile", "NA")
     val numSenses = context.getConfiguration.getInt("numWNSenses", 1)
-    relgramFormat = context.getConfiguration.getBoolean("relgramFormat", true)
-    typeSelectionFormat = context.getConfiguration.getBoolean("typeSelectionFormat", false)
-    logger.info("Exporting type selection format?: " + typeSelectionFormat)
-    logger.info("Exporting relgram format?: " + relgramFormat)
 
     extractor = new Extractor(maltParserPath)
     argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile, numSenses)
@@ -69,32 +173,29 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
                    context: Mapper[LongWritable,Text, Text, Text] #Context) {
    try{
     val splits = value.toString.split("\t")
-    if(splits.size > 5){
-      val docid = splits(3)
-      val sentid = splits(4)
-      val sentence = splits(5)
+    if(splits.size > 4){
+      val docid = splits(2)
+      val sentid = splits(3)
+      val sentence = splits(4)
+      val hashes = SentenceHasher.sentenceHashes(sentence)
       val sortedExtrInstances = extractor.extract(sentence)
                                          .filter(confExtr => confExtr._1 > 0.1)
                                          .map(confExtr => confExtr._2)
                                          .toSeq
                                          .sorted(new OllieExtractionOrdering)
-
       var eid = 0
       sortedExtrInstances.foreach(extrInstance => {
         argTyper.assignTypes(extrInstance) match {
           case Some(typedExtrInstance:TypedExtractionInstance) => {
-            if(relgramFormat){
               val template = extrInstance.pattern.pattern.toString()
-              exportRelgramTuples(docid, sentid, sentence, eid, template, typedExtrInstance, context)
-            }else if(typeSelectionFormat){
-
-              exportTypeSelectionFormat(typedExtrInstance, context)
-            }
+              exportRelgramTuples(docid, sentid, sentence, hashes, eid, template, typedExtrInstance, context)
+              eid = eid + 1
           }
           case _ => //logger.error("Failed to extract head word for extrInstance: " + extrInstance.extr.arg1.nodes.seq.toString + " and " + extrInstance.extr.arg2.nodes.seq.toString)
         }
-
       })
+    }else{
+      logger.error("Skipping line with < 6 fields: " + splits.size + " and string: " + splits.mkString("_,_"))
     }
   }catch {
      case e:Exception => {
@@ -103,22 +204,8 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
      }
    }
   }
-
-
-  def exportTypeSelectionFormat(typedExtrInstance: TypedExtractionInstance, context: Mapper[LongWritable, Text, Text, Text]#Context) {
-    val arg1Head = typedExtrInstance.arg1Head.map(h => h.string).mkString(" ")
-    val relHead = typedExtrInstance.relHead.map(h => h.string).mkString(" ")//typedExtrInstance.extractionInstance.extr.rel.text
-    val arg2Head = typedExtrInstance.arg2Head.map(h => h.string).mkString(" ")
-    val arg1Types = typedExtrInstance.arg1Types.map(a1type => a1type.name.split(";").head)
-    val arg2Types = typedExtrInstance.arg2Types.map(a2type => a2type.name.split(";").head)
-    addKeyValueForArgTypes("arg1", arg1Types, arg1Head, relHead, context)
-    addKeyValueForArgTypes("arg2", arg2Types, arg2Head, relHead, context)
-    addKeyValueForArgTypes("arg", arg1Types, arg1Head, relHead, context)
-    addKeyValueForArgTypes("arg", arg2Types, arg2Head, relHead, context)
-  }
-
   //sid sentence (orig) (head) arg1types arg2types
- def exportRelgramTuples(docid:String, sid:String, sentence:String, eid:Int, template:String, typedExtractionInstance:TypedExtractionInstance, context: Mapper[LongWritable, Text, Text, Text]#Context){
+ def exportRelgramTuples(docid:String, sid:String, sentence:String, hashes:Iterable[Int], eid:Int, template:String, typedExtractionInstance:TypedExtractionInstance, context: Mapper[LongWritable, Text, Text, Text]#Context){
 
     val origTuple = "%s\t%s\t%s".format(typedExtractionInstance.extractionInstance.extr.arg1.text, typedExtractionInstance.extractionInstance.extr.rel.text,
                                         typedExtractionInstance.extractionInstance.extr.arg2.text)
@@ -133,14 +220,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
     val value = "%s\t%s\t%s\t%s\t%s".format(template, origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
     context.write(new Text(key), new Text(value))
  }
-  def addKeyValueForArgTypes(n:String, argTypes: Iterable[String], argHead: String, relHead: String, context: Mapper[LongWritable, Text, Text, Text]#Context) {
-    argTypes.foreach(atype => {
-      val argKey = "%s\t%s\t%s".format(n, atype, argHead)
-      context.write(new Text(argKey), new Text(""))
-      val argRelKey = "%s\t%s\t%s\t%s".format(n + "rel", atype, relHead, argHead)
-      context.write(new Text(argRelKey), new Text(""))
-    })
-  }
+
 }
 
 
@@ -152,7 +232,12 @@ object RelgramTuplesHadoop{
     val conf = new Configuration()
     val otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs
     if (otherArgs.length < 2) {
-      println("Usage: RelgramsHadoop --extractReverbTuples --count <in> <out1> <out2>")
+      println("Usage: RelgramTuplesHadoop -DexportRelgramFormat=true " +
+             "-DmaltParserPath=src/main/resources/engmalt.linear-1.7.mco " +
+             "-DwnHome=/Users/niranjan/work/local/wordnet3.0 " +
+             "-DwnTypesFile=wordnet-classes-large.txt " +
+             "-DneModelFile=src/main/resources/english.muc.7class.nodistsim.crf.ser.gz  " +
+             "<chunker file> <outputfile>")
       println("Args: " + otherArgs.mkString(","))
       return
     }
@@ -167,23 +252,6 @@ object RelgramTuplesHadoop{
     val outputPath = otherArgs(1)
     println("Input path: " + inputPath)
     println("Output path: " + outputPath)
-
-    /**var inputPath, outputPath = ""
-    var wnHome = "/home/niranjan/local/Wordnet3.0"
-    var wnTypesFile = "wordnet-classes-large.txt"
-
-    var neModelFile = "/Users/niranjan/work/projects/git/scala/argtyping/src/main/resources/english.muc.7class.nodistsim.prop"
-    var maltParserPath="/Users/niranjan/work/projects/git/relgrams/relgramtuples/src/main/resources/engmalt.linear-1.7.mco"
-    val parser = new OptionParser() {
-      arg("inputPath", "hdfs input path", {str => inputPath = str})
-      arg("outputPath", "hdfs output path", { str => outputPath = str })
-      opt("wnHome", "wordnet home", { str => wnHome = str })
-      opt("wnTypesFile", "wordnet home", { str => wnTypesFile = str })
-      opt("neModelFile", "Stanford NE model file.", { str => neModelFile = str })
-      opt("mpp", "maltParserPath", "Malt parser file path.", {str => maltParserPath = str})
-    }
-
-    if (!parser.parse(args)) return*/
 
     val ejob = new Job(conf, "extract-relgram-tuples")
     ejob.setJarByClass(classOf[RelgramTuplesMapper])
@@ -200,8 +268,9 @@ object RelgramTuplesHadoop{
 
     //Input: <docname, <extraction sentenceWords record1__DOCEXTR_DELIM__extraction sentenceWords record2__DOCEXTR_DELIM__extraction sentenceWords record3>
     //Output: List of rel-view grams <vType, first + second + hashes + count>
+
     ejob setMapperClass classOf[RelgramTuplesMapper]
-    ejob setReducerClass  classOf[RelgramReducer]
+    ejob setReducerClass classOf[RelgramTuplesReducer]
     ejob.setNumReduceTasks(1)
 
     FileInputFormat.addInputPath(ejob, new Path(inputPath))
@@ -211,6 +280,56 @@ object RelgramTuplesHadoop{
 
   }
 }
+
+object TypeSelectionHadoop{
+
+
+
+  def main(args:Array[String]){
+    val conf = new Configuration()
+    val otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs
+    if (otherArgs.length < 2) {
+      println("Usage: TypeSelectionHadoop -DwnHome=wnHome -DwnTypesFile=wordnet-classes-large.txt -D <inputpath> <outputpath>")
+      println("Args: " + otherArgs.mkString(","))
+      return
+    }
+    println
+    println("*****************************")
+    println("Configuration: " + conf.toString)
+    println("*****************************")
+    println
+
+    println("Args: " + otherArgs.mkString(","))
+    val inputPath = otherArgs(0)
+    val outputPath = otherArgs(1)
+    println("Input path: " + inputPath)
+    println("Output path: " + outputPath)
+
+
+    val ejob = new Job(conf, "type-selection")
+    ejob.setJarByClass(classOf[TypeSelectionMapper])
+
+    if (conf.getBoolean("inLzo", false)) {
+      ejob.setInputFormatClass(classOf[LzoTextInputFormat])
+    } else {
+      ejob.setInputFormatClass(classOf[TextInputFormat]) //LzoTextInputFormat])
+    }
+
+    ejob setOutputKeyClass classOf[Text]
+    ejob setOutputValueClass classOf[Text]
+
+    ejob setMapperClass classOf[TypeSelectionMapper]
+    ejob setReducerClass  classOf[TypeSelectionReducer]
+    ejob.setNumReduceTasks(1)
+
+    FileInputFormat.addInputPath(ejob, new Path(inputPath))
+    FileOutputFormat.setOutputPath(ejob, new Path(outputPath))
+
+    ejob.waitForCompletion(true)
+
+  }
+}
+
 object RelgramTuplesApp{
 
   val logger = LoggerFactory.getLogger(this.getClass)
