@@ -533,8 +533,7 @@ class WordNetTyper {
     val (matchString:String, hypernyms:Seq[Set[ISynset]]) = hypernymStream(token::Nil, senses)
     hypernyms.iterator.filter(st => st.size > 0).foreach(st => {
       st.foreach(s => if (typeSynsetIds.contains(s.getID.toString)) {
-
-        println(token + " has matching typeSynsetIds: " + s.getWords.map(i => i.getLemma).mkString(","))
+        //println(token + " has matching typeSynsetIds: " + s.getWords.map(i => i.getLemma).mkString(","))
         return true
       })
     })

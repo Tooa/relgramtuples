@@ -84,6 +84,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
               val template = extrInstance.pattern.pattern.toString()
               exportRelgramTuples(docid, sentid, sentence, eid, template, typedExtrInstance, context)
             }else if(typeSelectionFormat){
+              logger.info("Exporting type selection format: ")
               exportTypeSelectionFormat(typedExtrInstance, context)
             }
           }
