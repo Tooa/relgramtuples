@@ -19,14 +19,14 @@ class RelgramTuplesExtractor(extractor:Extractor, argTyper:ArgumentsTyper) {
     val hashes = SentenceHasher.sentenceHashes(sentence)
     val sortedExtrInstances = extractor.extract(sentence)
       .filter(confExtr => confExtr._1 > 0.1)
-      .map(confExtr => confExtr._2)
       .toSeq
       .sorted(new OllieExtractionOrdering)
-    var eid = 0
-    sortedExtrInstances.flatMap(extrInstance => {
+    var extrid = 0
+    sortedExtrInstances.flatMap(confExtrInstance => {
+      val extrInstance = confExtrInstance._2
       argTyper.assignTypes(extrInstance) match {
         case Some(typedExtrInstance:TypedExtractionInstance) => {
-          val template = extrInstance.pattern.pattern.toString()
+          extrid = extrid + 1
           Some(new RelgramTuple(docid, sentid, extrid, sentence, hashes, typedExtrInstance))
         }
         case None => None

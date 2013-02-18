@@ -13,10 +13,10 @@ import scala.collection.JavaConversions._
 import edu.washington.cs.knowitall.ollie.OllieExtractionInstance
 import edu.washington.cs.knowitall.openparse.extract.Extraction.Part
 
-class OllieExtractionOrdering extends scala.math.Ordering[OllieExtractionInstance] {
-  def compare(xinst: OllieExtractionInstance, yinst: OllieExtractionInstance):Int = {
-    val x = xinst.extr
-    val y = yinst.extr
+class OllieExtractionOrdering extends scala.math.Ordering[(Double, OllieExtractionInstance)] {
+  def compare(xinst: (Double, OllieExtractionInstance), yinst: (Double, OllieExtractionInstance)):Int = {
+    val x = xinst._2.extr
+    val y = yinst._2.extr
     val xarg1:Part = x.arg1
     val xrel:Part = x.rel
     val xarg2:Part = x.arg2
