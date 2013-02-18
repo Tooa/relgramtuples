@@ -12,5 +12,11 @@ package edu.washington.cs.knowitall.relgrams.extractors
 import scala.collection.JavaConversions._
 import edu.washington.cs.knowitall.relgrams.typers.TypedExtractionInstance
 
-case class RelgramTuple(docid:String, sentid:Int, extrid:Int, sentence:String, hashes:Iterable[Int], typedExtrInstance:TypedExtractionInstance) {
+
+case class RelgramTuple(docid:String, sentid:Int, extrid:Int,
+                        sentence:String,
+                        hashes:Iterable[Int],
+                        typedExtrInstance:TypedExtractionInstance) {
+
+
 }

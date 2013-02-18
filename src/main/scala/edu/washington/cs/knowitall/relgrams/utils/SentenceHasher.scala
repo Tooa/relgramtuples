@@ -23,11 +23,9 @@ object SentenceHasher {
   def sentenceHashes(insentence:String) = {
     val sentence = insentence.toLowerCase()
     val sentenceHashCode = sentence.replaceAll("[^a-zA-Z0-9]", "").hashCode
-    sentenceHashCode::Nil ++ sentence.split(delims).filter(split => split.split(" ").size > 3).map(split => {
-      val splitString = split.replaceAll("[^a-zA-Z0-9]", "")
-      println("split: " + split + " splitstring: " + splitString)
-      splitString.hashCode
-    })
+    sentenceHashCode::Nil ++ sentence.split(delims)
+                                     .filter(split => split.split(" ").size >= 5)
+                                     .map(split => split.replaceAll("[^a-zA-Z0-9]", "").hashCode)
   }
 
 }
