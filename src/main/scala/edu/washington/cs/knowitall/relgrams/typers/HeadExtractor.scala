@@ -86,7 +86,7 @@ object HeadExtractor {
   stopwordsForRelations += "whose"
   stopwordsForRelations += "'s"
 
-  def relHead(tokens:Seq[PostaggedToken]) = tokens.filter(token => !stopTagsForRelation.contains(token.postag) && stopwordsForRelations.contains(token.string))
+  def relHead(tokens:Seq[PostaggedToken]) = tokens.filter(token => !stopTagsForRelation.contains(token.postag) && !stopwordsForRelations.contains(token.string))
   def relHeadString(tokens:Seq[PostaggedToken]):Option[String] = {
     val headTokens = relHead(tokens)
     if(headTokens.isEmpty == false){

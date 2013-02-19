@@ -147,7 +147,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
     val sentid = relgramTuple.sentid
     val sentence = relgramTuple.sentence
     val extrid = relgramTuple.extrid
-
+    val hashes = relgramTuple.hashes
     val origTuple = "%s\t%s\t%s".format(typedExtractionInstance.extractionInstance.extr.arg1.text, typedExtractionInstance.extractionInstance.extr.rel.text,
       typedExtractionInstance.extractionInstance.extr.arg2.text)
 
@@ -156,9 +156,9 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
       tokensToString(typedExtractionInstance.relHead),
       tokensToString(typedExtractionInstance.arg2Head))
 
-    def typesString(types:Iterable[Type]) = types.map(t => t.name + ":" + t.source).mkString(" ")
+    def typesString(types:Iterable[Type]) = types.map(t => t.name + ":" + t.source).mkString(",")
     val key = "%s\t%s\t%s\t%d".format(docid, sentid, sentence, extrid)
-    val value = "%s\t%s\t%s\t%s".format(origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
+    val value = "%s\t%s\t%s\t%s\t%s".format(hashes.mkString(","), origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
     context.write(new Text(key), new Text(value))
   }
 
@@ -173,7 +173,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
                                         tokensToString(typedExtractionInstance.relHead),
                                         tokensToString(typedExtractionInstance.arg2Head))
 
-    def typesString(types:Iterable[Type]) = types.map(t => t.name + ":" + t.source).mkString(" ")
+    def typesString(types:Iterable[Type]) = types.map(t => t.name + ":" + t.source).mkString(",")
     val key = "%s\t%s\t%s\t%d".format(docid, sid, sentence, eid)
     val value = "%s\t%s\t%s\t%s\t%s".format(template, origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
     context.write(new Text(key), new Text(value))
