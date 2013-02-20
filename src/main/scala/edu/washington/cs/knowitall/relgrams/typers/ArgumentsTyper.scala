@@ -26,12 +26,11 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
 
   val neTyper = new NETyper(neModelFile)
   HeadExtractor.setWnHome(wordnetLocation)
-  val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, (1 until wnSenses+1), 3, true, false)
+  val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, (1 until wnSenses+1), true, false)
   val prnTyper = new PronounTyper
   def assignTypes(extractionInstance:OllieExtractionInstance):Option[TypedExtractionInstance] = {
     val tokens = extractionInstance.sentence.nodes.toSeq
     val neTypes = neTyper.assignTypesToSentence(tokens)
-    //neTypes.foreach(net => println("NEType: " + net))
     val arg1Tokens = extractionInstance.extr.arg1.nodes.toSeq
     val arg2Tokens = extractionInstance.extr.arg2.nodes.toSeq
     val relTokens = extractionInstance.extr.rel.nodes.toSeq

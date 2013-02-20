@@ -89,8 +89,12 @@ object WordNetTyper{
 
 
   def main(args:Array[String]){
-    //val wnTyper = new WordnetTyper("/Users/niranjan/work/local/wordnet3.0", "/Users/niranjan/work/projects/git/relgrams/relinkhadoop/156classes.txt", 0::1::2::Nil, true)
-    val wnTyper = new WordNetTyper("/Users/niranjan/work/local/wordnet3.0", "src/main/resources/wordnet-classes-large.txt", 0::1::2::Nil, 3, true, true)
+    val wordnetDictPath = args(0)//"/Users/niranjan/work/local/wordnet3.0"
+    val typesFile = "src/main/resources/wordnet-classes-large.txt"
+    val senses = 1::2::3::Nil
+    val retainUnmappedTypes = true
+    val filterTypes = true
+    val wnTyper = new WordNetTyper(wordnetDictPath, typesFile, senses,  filterTypes, retainUnmappedTypes)
 
 
 
@@ -105,7 +109,6 @@ object WordNetTyper{
     println("Wordnet Types for ambassador: \n" + wtypes.mkString("\n"))
 
 
-    exit(-1)
 
     var ptoken = new PostaggedToken("NN", "Bank", 0)
     var isGroup = wnTyper.isGroupQuantityAmountNumberOrPart(ptoken)//, 0::1::2::Nil, 3, false)
@@ -115,19 +118,19 @@ object WordNetTyper{
     isGroup = wnTyper.isGroupQuantityAmountNumberOrPart(ptoken)//, 0::1::2::Nil, 3, false)
     println("Is Group: " + isGroup)
 
-    exit(-1)
+
 
     ptokens = new PostaggedToken("NN", "Bank", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
     println("Wordnet Types for Bank: \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("NN", "bomb", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println("Wordnet Types for bomb: \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("NN", "thing", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println("Wordnet Types for thing: \n" + wtypes.mkString("\n"))
 
@@ -136,13 +139,13 @@ object WordNetTyper{
     println
     println
     ptokens = new PostaggedToken("DT", "A", 0)::new PostaggedToken("JJ", "collection", 0)::new PostaggedToken("IN", "of", 0)::new PostaggedToken("NNS", "flowers", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
 
     println("Wordnet Types for 'A collection of flowers': \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("CD", "Twenty", 0)::new PostaggedToken("NNS", "flowers", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -154,7 +157,7 @@ object WordNetTyper{
 
     ptokens = new PostaggedToken("NN", "Department", 0)::new PostaggedToken("IN", "of", 0)::new PostaggedToken("NN", "computer", 0)::new PostaggedToken("NN", "science", 0)::Nil
 
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::3::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::3::Nil, false)
 
     println
     println
@@ -163,7 +166,7 @@ object WordNetTyper{
     println("Wordnet Types for 'Department of computer science': \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("CD", "Twenty", 0)::new PostaggedToken("'s", "POS", 0)::new PostaggedToken("NN", "drama", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -173,7 +176,7 @@ object WordNetTyper{
 
 
     ptokens = new PostaggedToken("DT", "the", 0)::new PostaggedToken("town", "NN", 0)::new PostaggedToken("'s", "POS", 0)::new PostaggedToken("JJ", "rich", 0)::new PostaggedToken("NN", "farmland", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -183,7 +186,7 @@ object WordNetTyper{
 
 
     ptokens = new PostaggedToken("NNP", "Stanford", 0)::new PostaggedToken("NNP", "University", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -192,7 +195,7 @@ object WordNetTyper{
     println("Wordnet Types for 'Stanford University': \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("NNP", "Random", 0)::new PostaggedToken("NNP", "University", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -201,7 +204,7 @@ object WordNetTyper{
     println("Wordnet Types for 'Random University': \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("JJ", "small", 0)::new PostaggedToken("NN", "portions", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -211,7 +214,7 @@ object WordNetTyper{
 
 
     ptokens = new PostaggedToken("NNP", "Devils", 0)::new PostaggedToken("NN", "coach", 0)::new PostaggedToken("NNP", "Barack", 0)::new PostaggedToken("NNP", "Obama", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -222,7 +225,7 @@ object WordNetTyper{
 
 
     ptokens = new PostaggedToken("NNP", "Devils", 0)::new PostaggedToken("NN", "coach", 0)::new PostaggedToken("NNP", "Barack", 0)::new PostaggedToken("NNP", "Obama", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -231,7 +234,7 @@ object WordNetTyper{
     println("Wordnet Types for 'Devils coach John Peter': \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("NNP", "Devils", 0)::new PostaggedToken("NN", "coach", 0)::new PostaggedToken("NNP", "Barack", 0)::new PostaggedToken("NNP", "Obama", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -240,7 +243,7 @@ object WordNetTyper{
     println("Wordnet Types for 'Devils coach John Peter': \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("NNP", "Devils", 0)::new PostaggedToken("NN", "coach", 0)::new PostaggedToken("NNP", "Barack", 0)::new PostaggedToken("NNP", "Obama", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
     println
     println
@@ -249,11 +252,11 @@ object WordNetTyper{
     println("Wordnet Types for 'Devils coach John Peter': \n" + wtypes.mkString("\n"))
 
     ptokens = new PostaggedToken("NNP", "Devils", 0)::new PostaggedToken("NN", "coach", 0)::new PostaggedToken("NNP", "Barack", 0)::new PostaggedToken("NNP", "Obama", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
 
     ptokens = new PostaggedToken("NNP", "Devils", 0)::new PostaggedToken("NN", "coach", 0)::new PostaggedToken("NNP", "Barack", 0)::new PostaggedToken("NNP", "Obama", 0)::Nil
-    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, 3, false)
+    wtypes = wnTyper.getWordnetTypes(ptokens, 0::1::2::Nil, false)
 
 
 
@@ -288,19 +291,18 @@ class WordNetTyper {
 
   var retainUnmappedTypes = false
   var senses = Seq(1,2,3)
-  var hypHeight = 1
+
   def this(wnhome:String,
            typesFile:String,
            senses:Seq[Int],
-           hypHeight:Int,
            filterTypes:Boolean,
            retainUnmappedTypes:Boolean) = {
     this()
-    setup(wnhome, typesFile, senses, hypHeight, filterTypes, retainUnmappedTypes)
+    setup(wnhome, typesFile, senses, filterTypes, retainUnmappedTypes)
   }
 
   val Xclasses = "number:1,group:0,quantity:0,part:0,amount:0,percentage:0,proportion:3"
-  def setup(wnhome:String, typesFile: String, senses:Seq[Int], hypHeight:Int, filterTypes:Boolean, retainUnmappedTypes:Boolean) {
+  def setup(wnhome:String, typesFile: String, senses:Seq[Int],  filterTypes:Boolean, retainUnmappedTypes:Boolean) {
     setWNResources(wnhome)
     loadTypes(typesFile)
     setupBlackList
@@ -310,7 +312,6 @@ class WordNetTyper {
     })
     println("XClasses size: " + typeSynsetIds.size)
     this.senses = senses
-    this.hypHeight = hypHeight
     this.filterTypes = filterTypes
     this.retainUnmappedTypes = retainUnmappedTypes
   }
@@ -516,16 +517,15 @@ class WordNetTyper {
 
 
 
-  def getWordnetTypes(tokens:Seq[PostaggedToken]):Iterable[Type] =  getWordnetTypes(tokens, senses, hypHeight, retainUnmappedTypes)
+  def getWordnetTypes(tokens:Seq[PostaggedToken]):Iterable[Type] =  getWordnetTypes(tokens, senses, retainUnmappedTypes)
 
   /**
    *
    * @param tokens
    * @param senses
-   * @param hypHeight
    * @return
    */
-  def getWordnetTypes(tokens:Seq[PostaggedToken], senses:Iterable[Int], hypHeight:Int, retainUnmappedTypes:Boolean):Iterable[Type] = {
+  def getWordnetTypes(tokens:Seq[PostaggedToken], senses:Iterable[Int], retainUnmappedTypes:Boolean):Iterable[Type] = {
     val (matchString:String, hypernyms:Seq[Set[ISynset]]) = hypernymStream(tokens, senses)
     val span = TypersUtil.span(tokens)
     findMatchingTypes(matchString, hypernyms, retainUnmappedTypes, span)
