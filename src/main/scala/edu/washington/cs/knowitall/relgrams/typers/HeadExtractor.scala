@@ -197,7 +197,7 @@ object HeadExtractor {
   def setWnHome(wnHomeInp:String){
     wnHome = wnHomeInp
   }
-  def getWordnetTyper(wnhome: String, wnTypesFile:String) = new WordNetTyper(wnhome, wnTypesFile, 1::Nil, 3, true, true)
+  def getWordnetTyper(wnhome: String, wnTypesFile:String) = new WordNetTyper(wnhome, wnTypesFile, 1::Nil, true, true)
 
   def findNPofNP(tokens:Seq[PostaggedToken]):Seq[PostaggedToken] = {
     val leadingOfIndex = tokens.indexWhere(token => token.string.equals("of") || token.string.equals("in"))
