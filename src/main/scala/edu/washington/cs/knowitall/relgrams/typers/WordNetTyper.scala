@@ -350,9 +350,9 @@ class WordNetTyper {
         addToSynsetClasses(line)
       })
     }else{
-      println("Type file is not a valid file: " + typesFile)
+      logger.error("Type file is not a valid file: " + typesFile)
     }
-    println("Wordnet Types size: " + types.size)
+    logger.debug("Number of wordnet types: " + types.size)
   }
 
 
@@ -380,9 +380,7 @@ class WordNetTyper {
     }
   }
 
-  def getNonNNPNouns(tokens: Seq[PostaggedToken]):Seq[PostaggedToken] = {
-    return tokens.filter(p => p.isCommonNoun)
-  }
+  def getNonNNPNouns(tokens: Seq[PostaggedToken]):Seq[PostaggedToken] = tokens.filter(p => p.isCommonNoun)
 
   def hypernymStream(tokens:Seq[PostaggedToken], senses:Iterable[Int]):(String, Seq[Set[ISynset]]) = findIndexedWord(tokens) match {
     case (matchString: String, Some(entry:IIndexWord)) => {
@@ -427,31 +425,6 @@ class WordNetTyper {
     hypernymIDs.map(sid => dict.getSynset(sid))
   }
 
-
-
-
-  /**
-   * Input is a phrase P.
-
-    1. Strip off any phrases from the start of P that match one of the following
-    patterns
-      DT of
-      CD of
-      (DT)* JJ of
-      RBS of
-
-    2. Truncate P at the first occurrence of punctuation, conjunction, or
-    preposition.
-
-    3. Let w_k be the last occurrence of a noun in what remains of P.  Strip off
-    any following targetWords of P.
-
-    Do until found in WordNet or P = empty string {
-     Look up P in WordNet nouns.
-     If found  set S to synsetIDs, else strip off first word of P.
-    }
-
-   */
   def findIndexedWord(tokens:Seq[PostaggedToken]):(String, Option[IIndexWord]) = {
     if(!tokens.isEmpty){
       val word = dict.getIndexWord(tokens.mkString(" "), POS.NOUN)
@@ -525,7 +498,7 @@ class WordNetTyper {
 
 
     }
-    return if (stems.size > n) stems(n) else ""
+    if (stems.size > n) stems(n) else ""
 
   }
 
@@ -535,7 +508,6 @@ class WordNetTyper {
     val (matchString:String, hypernyms:Seq[Set[ISynset]]) = hypernymStream(token::Nil, senses)
     hypernyms.iterator.filter(st => st.size > 0).foreach(st => {
       st.foreach(s => if (typeSynsetIds.contains(s.getID.toString)) {
-        //println(token + " has matching typeSynsetIds: " + s.getWords.map(i => i.getLemma).mkString(","))
         return true
       })
     })
@@ -556,7 +528,7 @@ class WordNetTyper {
   def getWordnetTypes(tokens:Seq[PostaggedToken], senses:Iterable[Int], hypHeight:Int, retainUnmappedTypes:Boolean):Iterable[Type] = {
     val (matchString:String, hypernyms:Seq[Set[ISynset]]) = hypernymStream(tokens, senses)
     val span = TypersUtil.span(tokens)
-    return findMatchingTypes(matchString, hypernyms, retainUnmappedTypes, span)
+    findMatchingTypes(matchString, hypernyms, retainUnmappedTypes, span)
   }
 
 
@@ -573,20 +545,11 @@ class WordNetTyper {
       })
       i = i + 1
     })
-    /**if(retainUnmappedTypes && outTypes.isEmpty){
-      stream.iterator.filter(st => st.size > 0).foreach(st => {
-        var i = 1
-        st.foreach( synset => {
-          outTypes += new Type("NA" + ";" + synset.getWords.map(s => s.getLemma).mkString("_"), WordNetTyper.WordNet, interval, matchingString) //.getWords.map(s => s.getLemma.replace("_", " "))
-        })
-        i = i + 1
-      })
-    } */
-    return outTypes
+    outTypes
   }
   def assignTypes(text:String, tokens:Seq[PostaggedToken]) = {//er: OllieExtractionInstance, retainUnmappedTypes:Boolean): (scala.Seq[Type], scala.Seq[Type]) = {
     val types = typesCache.getOrElse(text, getWordnetTypes(tokens))
-    trimCacheIfNecessary
+    trimCacheIfNecessary()
     typesCache += text -> types.toSeq
     if(argsList.contains(text) == false){
       argsList += text
@@ -595,7 +558,7 @@ class WordNetTyper {
   }
 
 
-  def trimCacheIfNecessary {
+  def trimCacheIfNecessary() {
     if (typesCache.keys.size > MAX_CACHE_SIZE) {
       val numToRemove = (argsList.size - MAX_CACHE_SIZE)
       val keysToRemove = argsList.take(numToRemove)

@@ -75,7 +75,15 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
 
   private def assignTypes(types:Seq[Type], tokens:Seq[Token]):Iterable[Type] = {
     val span = TypersUtil.span(tokens)
-    types.filter(typ => typ.interval.subset(span))
+    /**
+     * Tests whether typ interval is a subset of the interval span of the tokens.
+     * or if the span interval is a subset of the typ interval.
+     */
+    val ltokens = tokens.map(t => t.string.toLowerCase())
+    if (ltokens.contains("september") || ltokens.contains("bloomberg")){
+      println("Typ: " + types.map(typ => "%s(%s) spans [%d, %d] and tokens (%s) span: (%d, %d)".format(typ.name, typ.text, typ.interval.start, typ.interval.end, tokens.map(t => t.string).mkString(","), span.start, span.end)))
+    }
+    types.filter(typ => span.subset(typ.interval))
   }
 
 

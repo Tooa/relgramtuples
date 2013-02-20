@@ -2,7 +2,7 @@ package edu.washington.cs.knowitall.relgrams.apps
 
 import scala.collection.JavaConversions._
 import scopt.mutable.OptionParser
-import edu.washington.cs.knowitall.relgrams.typers.{TypedExtractionInstance, ArgumentsTyper}
+import edu.washington.cs.knowitall.relgrams.typers.{TypersUtil, TypedExtractionInstance, ArgumentsTyper}
 import edu.washington.cs.knowitall.relgrams.extractors.{RelgramTuple, OllieExtractionOrdering, Extractor}
 import io.Source
 import org.slf4j.LoggerFactory
@@ -20,6 +20,7 @@ import edu.washington.cs.knowitall.tool.typer.Type
 import edu.washington.cs.knowitall.openparse.extract.TemplateExtractor
 import edu.washington.cs.knowitall.ollie.OllieExtractionInstance
 import edu.washington.cs.knowitall.relgrams.utils.SentenceHasher
+import edu.washington.cs.knowitall.openparse.extract.Extraction.Part
 
 /**
  * Created with IntelliJ IDEA.
@@ -141,6 +142,13 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
    }
   }
 
+
+  val span_sep = "_SPAN_"
+  def textWithSpan(part: Part) = {
+    val interval = TypersUtil.span(part.nodes.toSeq)
+    "%s%s%s-%s".format(part.text, span_sep, interval.start, interval.end)
+  }
+
   def exportRelgramTuple(relgramTuple:RelgramTuple, context: Mapper[LongWritable, Text, Text, Text]#Context){
     val typedExtractionInstance = relgramTuple.typedExtrInstance
     val docid = relgramTuple.docid
@@ -148,21 +156,33 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
     val sentence = relgramTuple.sentence
     val extrid = relgramTuple.extrid
     val hashes = relgramTuple.hashes
-    val origTuple = "%s\t%s\t%s".format(typedExtractionInstance.extractionInstance.extr.arg1.text, typedExtractionInstance.extractionInstance.extr.rel.text,
-      typedExtractionInstance.extractionInstance.extr.arg2.text)
+
+    //val origTuple = "%s\t%s\t%s".format(typedExtractionInstance.extractionInstance.extr.arg1.text, typedExtractionInstance.extractionInstance.extr.rel.text,
+    //  typedExtractionInstance.extractionInstance.extr.arg2.text)
+
+    val arg1SpanText = textWithSpan(typedExtractionInstance.extractionInstance.extr.arg1)
+    val relSpanText  = textWithSpan(typedExtractionInstance.extractionInstance.extr.rel)
+    val arg2SpanText = textWithSpan(typedExtractionInstance.extractionInstance.extr.arg2)
+
+    val origTuple = "%s\t%s\t%s".format(arg1SpanText, relSpanText, arg2SpanText)
+
+    def tokensSpanString(tokens:Seq[Token]) = {
+      val span = TypersUtil.span(tokens)
+      "%s%s%d-%d".format(tokensToString(tokens), span_sep, span.start, span.end)
+    }
 
     def tokensToString(tokens:Seq[Token]) = tokens.map(t => t.string).mkString(" ")
-    val headTuple = "%s\t%s\t%s".format(tokensToString(typedExtractionInstance.arg1Head),
-      tokensToString(typedExtractionInstance.relHead),
-      tokensToString(typedExtractionInstance.arg2Head))
+    val headTuple = "%s\t%s\t%s".format(tokensSpanString(typedExtractionInstance.arg1Head),
+      tokensSpanString(typedExtractionInstance.relHead),
+      tokensSpanString(typedExtractionInstance.arg2Head))
 
-    def typesString(types:Iterable[Type]) = types.map(t => t.name + ":" + t.source).mkString(",")
+    def typesString(types:Iterable[Type]) = types.map(t => "Type:" + t.name + ":" + t.source).mkString(",")
     val key = "%s\t%s\t%s\t%d".format(docid, sentid, sentence, extrid)
     val value = "%s\t%s\t%s\t%s\t%s".format(hashes.mkString(","), origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
     context.write(new Text(key), new Text(value))
   }
 
-  //sid sentence (orig) (head) arg1types arg2types
+ /*8 //sid sentence (orig) (head) arg1types arg2types
  def exportRelgramTuples(docid:String, sid:String, sentence:String, hashes:Iterable[Int], eid:Int, template:String, typedExtractionInstance:TypedExtractionInstance, context: Mapper[LongWritable, Text, Text, Text]#Context){
 
     val origTuple = "%s\t%s\t%s".format(typedExtractionInstance.extractionInstance.extr.arg1.text, typedExtractionInstance.extractionInstance.extr.rel.text,
@@ -173,11 +193,12 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
                                         tokensToString(typedExtractionInstance.relHead),
                                         tokensToString(typedExtractionInstance.arg2Head))
 
+
     def typesString(types:Iterable[Type]) = types.map(t => t.name + ":" + t.source).mkString(",")
     val key = "%s\t%s\t%s\t%d".format(docid, sid, sentence, eid)
     val value = "%s\t%s\t%s\t%s\t%s".format(template, origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
     context.write(new Text(key), new Text(value))
- }
+ }   */
 
 }
 
@@ -285,17 +306,16 @@ object RelgramTuplesApp{
                                     typedExtrInstance.extractionInstance.extr.arg2.text)
 
               val extractionString = "%s\t%s\t%s".format(docid, sentid,origTuple)
-              //println("Original Tuple: " + origTuple)
               val arg1Head = typedExtrInstance.arg1Head.map(h => h.string).mkString(" ")
               val relHead = typedExtrInstance.extractionInstance.extr.rel.text
               val arg2Head = typedExtrInstance.arg2Head.map(h => h.string).mkString(" ")
               val headTuple = "(%s, %s, %s)".format(arg1Head, relHead, arg2Head)
               writer.println("Head\t%s\t%s".format(extractionString, headTuple))
-              //println("Head Tuple: " + headTuple)
+
               var typedArg1s = arg1Head::Nil
-              typedArg1s = typedArg1s ++ typedExtrInstance.arg1Types.map(a1type => a1type.name + ":" + a1type.source)
+              typedArg1s = typedArg1s ++ typedExtrInstance.arg1Types.map(a1type => "Type:" + a1type.name + ":" + a1type.source)
               var typedArg2s = arg2Head::Nil
-              typedArg2s = typedArg2s ++ typedExtrInstance.arg2Types.map(a2type => a2type.name + ":" + a2type.source)
+              typedArg2s = typedArg2s ++ typedExtrInstance.arg2Types.map(a2type => "Type:" + a2type.name + ":" + a2type.source)
 
               typedArg1s.foreach(a1type => {
                 typedArg2s.foreach(a2type =>  {

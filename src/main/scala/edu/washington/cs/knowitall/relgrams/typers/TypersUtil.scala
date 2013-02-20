@@ -12,6 +12,14 @@ import edu.washington.cs.knowitall.collection.immutable.Interval
  */
 object TypersUtil {
 
+  def main(args:Array[String]){
+    val testTokens = new Token("test", 0)::new Token("another", 5)::Nil
+    println(startEnd(testTokens))
+  }
+
+
+  def startingOffset(tokens:Seq[Token]) = tokens.head.offset
+
   def span(tokens:Seq[Token]) = {
     val (start:Int, end:Int) = startEnd(tokens)
     Interval.open(start, end)
