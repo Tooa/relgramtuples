@@ -25,8 +25,9 @@ object NETyper{
 
 }
 class PronounTyper{
+  val allowedPronouns = "he,she,they,you,we,i,me,him,her,them".split(",").toSet
   def assignTypes(argTokens:Seq[PostaggedToken]) = {
-    if (argTokens.size == 1 && argTokens(0).isPronoun){
+    if (argTokens.size == 1 && allowedPronouns.contains(argTokens(0).string) && argTokens(0).isPronoun){
       new Type("person:Pronoun", "PRN", argTokens(0).interval, argTokens(0).string)::Nil
     }else{
       Iterable[Type]()
