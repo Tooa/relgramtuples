@@ -30,6 +30,7 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
   HeadExtractor.setWnHome(wordnetLocation)
   val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, (1 until wnSenses+1), true, false)
   val prnTyper = new PronounTyper
+  val personTyper = new PersonTyper
   val neTyper = new NETyper(neModelFile)
 
   def getNETypes(sentenceTokens:Seq[Token]) = neTyper.assignTypesToSentence(sentenceTokens)
@@ -44,8 +45,8 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
     relHeadTokens = if (relHeadTokens.isEmpty) relTokens else relHeadTokens
     (arg1HeadTokensOption,  arg2HeadTokensOption) match {
       case (Some(arg1HeadTokens:Seq[PostaggedToken]), Some(arg2HeadTokens:Seq[PostaggedToken])) => {
-        val arg1Types = assignNETypes(arg1HeadTokens, neTypes)
-        val arg2Types = assignNETypes(arg2HeadTokens, neTypes)
+        val arg1Types = assignTypes(arg1HeadTokens, neTypes)
+        val arg2Types = assignTypes(arg2HeadTokens, neTypes)
 
         Some(new TypedExtractionInstance(extractionInstance,
           HeadExtractor.lemmatize(arg1HeadTokens),
@@ -65,18 +66,23 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
   def isPercent(typ:Type) = typ.name.toLowerCase.contains("percent")
   def isDateOrMoneyOrPercent(typ:Type) = isDate(typ) || isMoney(typ) || isPercent(typ)
 
-  private def assignNETypes(argHeadTokens: Seq[PostaggedToken], neTypes: Seq[Type]): Iterable[Type] = {
+  private def assignTypes(argHeadTokens: Seq[PostaggedToken], neTypes: Seq[Type]): Iterable[Type] = {
 
     //Get wordnet types
-    val wordNetHead = argHeadTokens.filter(p => !p.isProperNoun)// || p.postag.equals("CD"))
+    val wordNetHead = argHeadTokens.filter(p => (!p.isProperNoun && !p.isPronoun))// || p.postag.equals("CD"))
+
+
     val wordNetHeadText = wordNetHead.map(x => x.string).mkString(" ")
+    if (wordNetHeadText.contains("us")) println(wordNetHead.mkString(" "))
     val wnArgTypes = if(!wordNetHead.isEmpty) wnTyper.assignTypes(wordNetHeadText, wordNetHead) else Iterable[Type]()
 
     //Named entity types
-    val neArgTypes = assignTypes(neTypes, argHeadTokens)
+    val neArgTypes = assignNETypes(neTypes, argHeadTokens)
 
     //Pronoun types
     val prnTypes = prnTyper.assignTypes(argHeadTokens)
+
+    val pesonTypes = personTyper.assignTypes(argHeadTokens)
 
     //If no date or money or percent in arg then use number regexes.
     val numberTypes = if (neArgTypes.find(typ => isDateOrMoneyOrPercent(typ)) == None){
@@ -84,10 +90,10 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
     }else{
       Iterable[Type]()
     }
-    wnArgTypes ++ neArgTypes ++ prnTypes ++ numberTypes
+    (wnArgTypes ++ neArgTypes ++ prnTypes ++ pesonTypes ++ numberTypes).toSet
   }
 
-  private def assignTypes(types:Seq[Type], tokens:Seq[Token]):Iterable[Type] = {
+  private def assignNETypes(types:Seq[Type], tokens:Seq[Token]):Iterable[Type] = {
     val span = TypersUtil.span(tokens)
     /**
      * Tests whether typ interval is a subset of the interval span of the tokens.

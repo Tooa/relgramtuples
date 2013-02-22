@@ -25,10 +25,21 @@ object NETyper{
   val defaultURL = "/Users/niranjan/work/projects/git/scala/argtyping/src/main/resources/english.muc.7class.nodistsim.prop"
 
 }
-class PronounTyper{
-  val allowedPronouns = "he,she,they,you,we,i,me,him,her,them".split(",").toSet
+class PersonTyper {
   def assignTypes(argTokens:Seq[PostaggedToken]) = {
-    if (argTokens.size == 1 && allowedPronouns.contains(argTokens(0).string) && argTokens(0).isPronoun){
+    if (argTokens.size == 1 && argTokens(0).string.equals("people")){
+      new Type("person", "People", argTokens(0).interval, argTokens(0).string)::Nil
+    }else{
+      Iterable[Type]()
+    }
+  }
+}
+class PronounTyper{
+  val allowedPronouns = "he,she,they,you,we,i,me,him,her,them,us".split(",").toSet
+  def assignTypes(argTokens:Seq[PostaggedToken]) = {
+    if (argTokens.size == 1
+      && allowedPronouns.contains(argTokens(0).string.toLowerCase)
+      && argTokens(0).isPronoun){
       new Type("person", "Pronoun", argTokens(0).interval, argTokens(0).string)::Nil
     }else{
       Iterable[Type]()

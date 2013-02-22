@@ -306,10 +306,12 @@ class WordNetTyper {
     setWNResources(wnhome)
     loadTypes(typesFile)
     setupBlackList
-    Xclasses.split(",").foreach(x => {
-      val splits = x.split(":")
-      addXClasses(splits(0),splits(1).toInt)
-    })
+    if(!new File(typesFile).exists()){
+      Xclasses.split(",").foreach(x => {
+        val splits = x.split(":")
+        addXClasses(splits(0),splits(1).toInt)
+      })
+    }
     println("XClasses size: " + types.size)
     this.senses = senses
     this.filterTypes = filterTypes
