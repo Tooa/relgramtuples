@@ -310,7 +310,7 @@ class WordNetTyper {
       val splits = x.split(":")
       addXClasses(splits(0),splits(1).toInt)
     })
-    println("XClasses size: " + typeSynsetIds.size)
+    println("XClasses size: " + types.size)
     this.senses = senses
     this.filterTypes = filterTypes
     this.retainUnmappedTypes = retainUnmappedTypes

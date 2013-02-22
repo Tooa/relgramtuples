@@ -4,6 +4,7 @@ import edu.washington.cs.knowitall.ollie.OllieExtractionInstance
 import edu.washington.cs.knowitall.tool.tokenize.Token
 import edu.washington.cs.knowitall.tool.postag.PostaggedToken
 import edu.washington.cs.knowitall.tool.typer.Type
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -24,13 +25,16 @@ case class TypedExtractionInstance(extractionInstance:OllieExtractionInstance,
 
 class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wordnetTypesFile:String, val wnSenses:Int) {
 
-  val neTyper = new NETyper(neModelFile)
+  val logger = LoggerFactory.getLogger(this.getClass)
+
   HeadExtractor.setWnHome(wordnetLocation)
   val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, (1 until wnSenses+1), true, false)
   val prnTyper = new PronounTyper
-  def assignTypes(extractionInstance:OllieExtractionInstance):Option[TypedExtractionInstance] = {
-    val tokens = extractionInstance.sentence.nodes.toSeq
-    val neTypes = neTyper.assignTypesToSentence(tokens)
+  val neTyper = new NETyper(neModelFile)
+
+  def getNETypes(sentenceTokens:Seq[Token]) = neTyper.assignTypesToSentence(sentenceTokens)
+
+  def assignTypes(neTypes:Seq[Type])(extractionInstance:OllieExtractionInstance):Option[TypedExtractionInstance] = {
     val arg1Tokens = extractionInstance.extr.arg1.nodes.toSeq
     val arg2Tokens = extractionInstance.extr.arg2.nodes.toSeq
     val relTokens = extractionInstance.extr.rel.nodes.toSeq
@@ -40,8 +44,8 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
     relHeadTokens = if (relHeadTokens.isEmpty) relTokens else relHeadTokens
     (arg1HeadTokensOption,  arg2HeadTokensOption) match {
       case (Some(arg1HeadTokens:Seq[PostaggedToken]), Some(arg2HeadTokens:Seq[PostaggedToken])) => {
-        val arg1Types = assignTypes(arg1HeadTokens, neTypes)
-        val arg2Types = assignTypes(arg2HeadTokens, neTypes)
+        val arg1Types = assignNETypes(arg1HeadTokens, neTypes)
+        val arg2Types = assignNETypes(arg2HeadTokens, neTypes)
 
         Some(new TypedExtractionInstance(extractionInstance,
           HeadExtractor.lemmatize(arg1HeadTokens),
@@ -56,10 +60,15 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
   }
 
 
-  private def assignTypes(argHeadTokens: Seq[PostaggedToken], neTypes: List[Type]): Iterable[Type] = {
+  def isDate(typ:Type) = typ.name.toLowerCase.contains("date")
+  def isMoney(typ:Type) = typ.name.toLowerCase.contains("money")
+  def isPercent(typ:Type) = typ.name.toLowerCase.contains("percent")
+  def isDateOrMoneyOrPercent(typ:Type) = isDate(typ) || isMoney(typ) || isPercent(typ)
+
+  private def assignNETypes(argHeadTokens: Seq[PostaggedToken], neTypes: Seq[Type]): Iterable[Type] = {
 
     //Get wordnet types
-    val wordNetHead = argHeadTokens.filter(p => p.isCommonNoun)
+    val wordNetHead = argHeadTokens.filter(p => !p.isProperNoun)// || p.postag.equals("CD"))
     val wordNetHeadText = wordNetHead.map(x => x.string).mkString(" ")
     val wnArgTypes = if(!wordNetHead.isEmpty) wnTyper.assignTypes(wordNetHeadText, wordNetHead) else Iterable[Type]()
 
@@ -69,7 +78,13 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
     //Pronoun types
     val prnTypes = prnTyper.assignTypes(argHeadTokens)
 
-    wnArgTypes ++ neArgTypes ++ prnTypes
+    //If no date or money or percent in arg then use number regexes.
+    val numberTypes = if (neArgTypes.find(typ => isDateOrMoneyOrPercent(typ)) == None){
+      NumberFinder.findNumbers(argHeadTokens)
+    }else{
+      Iterable[Type]()
+    }
+    wnArgTypes ++ neArgTypes ++ prnTypes ++ numberTypes
   }
 
   private def assignTypes(types:Seq[Type], tokens:Seq[Token]):Iterable[Type] = {
@@ -78,10 +93,6 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
      * Tests whether typ interval is a subset of the interval span of the tokens.
      * or if the span interval is a subset of the typ interval.
      */
-    val ltokens = tokens.map(t => t.string.toLowerCase())
-    if (ltokens.contains("september") || ltokens.contains("bloomberg")){
-      println("Typ: " + types.map(typ => "%s(%s) spans [%d, %d] and tokens (%s) span: (%d, %d)".format(typ.name, typ.text, typ.interval.start, typ.interval.end, tokens.map(t => t.string).mkString(","), span.start, span.end)))
-    }
     types.filter(typ => span.subset(typ.interval))
   }
 

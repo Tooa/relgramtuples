@@ -25,6 +25,7 @@ import scala.Some
 import edu.washington.cs.knowitall.tool.stem.MorphaStemmer
 import io.Source
 import edu.washington.cs.knowitall.tool.tokenize.Token
+import org.slf4j.LoggerFactory
 
 /**
  * Created by IntelliJ IDEA.
@@ -36,6 +37,7 @@ import edu.washington.cs.knowitall.tool.tokenize.Token
 
 object HeadExtractor {
 
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   def main(args:Array[String]){
     val testCasesFile = args(0)
@@ -197,7 +199,7 @@ object HeadExtractor {
   def setWnHome(wnHomeInp:String){
     wnHome = wnHomeInp
   }
-  def getWordnetTyper(wnhome: String, wnTypesFile:String) = new WordNetTyper(wnhome, wnTypesFile, 1::Nil, true, true)
+  def getWordnetTyper(wnhome: String, wnTypesFile:String) = new WordNetTyper(wnhome, "", 1::Nil, true, true)
 
   def findNPofNP(tokens:Seq[PostaggedToken]):Seq[PostaggedToken] = {
     val leadingOfIndex = tokens.indexWhere(token => token.string.equals("of") || token.string.equals("in"))
@@ -271,6 +273,8 @@ object HeadExtractor {
     }
   }
 
+
+
   def argumentHead(tokens:Seq[PostaggedToken]):Option[Seq[PostaggedToken]] = {
 
     //val argString = tokens.map(token => token.string).mkString(" ")
@@ -304,21 +308,19 @@ object HeadExtractor {
       subTokens = returnTokens
     }
 
-
-
     def allowedToken(p:PostaggedToken) = !p.postag.startsWith("W") &&
-      (p.isNoun || p.isAdjective || p.postag.equals("CD") ||
+      (p.isNoun || p.isAdjective || p.isVerbGerund || p.postag.equals("CD") ||
         p.postag.equals("DT") || p.string.equals("the") || p.string.equals("a") || p.string.equals("an"))
 
+    def contentToken(p:PostaggedToken): Boolean = p.isNoun || p.isPronoun || p.postag.equals("CD")
+
     val truncateIndex = subTokens.indexWhere(p => !allowedToken(p))
-    returnTokens = subTokens.take(truncateIndex)
-
-    if (truncateIndex >= 0 && returnTokens.find(p => p.isNoun).isDefined){
-      subTokens = returnTokens
+    if (truncateIndex > 0 && subTokens.take(truncateIndex).find(p => (p.isPronoun || p.isNoun)) != None){//&& returnTokens.find(p => p.isNoun).isDefined){
+      subTokens = subTokens.take(truncateIndex)
+    }else if(subTokens.find(p => contentToken(p)) == None){
+      logger.error("No allowed tokens in phrase at: " + subTokens)
+      return None
     }
-
-
-
 
     /**
      * If NNPS* NNPS* -> return full sequence. (Saudi Arabia --> Saudi Arabia)
@@ -336,12 +338,16 @@ object HeadExtractor {
 
     assert(subTokens.size > 0, " Sub tokens cannot be zero.")
     //If only one token left return the stemmed version.
+
+    //If no noun exists return the stemmed version of the entire string.
+    if(subTokens.find(token => (token.isNoun || token.isPronoun)) == None){
+      //logger.error("Failed to find nouns in string: " + subTokens)
+      return Some(subTokens.last::Nil)
+    }
+
+    //If there is only one noun left. Return.
     if(subTokens.size < 2){
       return Some(subTokens)
-    }
-    //If no noun exists return the stemmed version of the entire string.
-    if(subTokens.find(token => token.isNoun) == None){
-      return None
     }
 
     def findLastPosSequence(tokens:Seq[PostaggedToken], posTester:PostaggedToken => Boolean):Option[Seq[PostaggedToken]] = {
@@ -359,8 +365,9 @@ object HeadExtractor {
       })
       return Some(lastSeq.reverse)
     }
-    def isNoun(x:PostaggedToken) = x.isNoun
+    def isNoun(x:PostaggedToken) = x.isNoun || x.isPronoun
     def isProperNoun(x:PostaggedToken) = x.isProperNoun
+
     findLastPosSequence(subTokens, isNoun) match {
       case Some(lastNounSeq:Seq[PostaggedToken]) => {
         val lastNoun = lastNounSeq.last

@@ -68,16 +68,25 @@ class TypeSelectionMapper extends Mapper[LongWritable, Text, Text, Text] {
         val docid = splits(2)
         val sentid = splits(3)
         val sentence = splits(4)
-        extractor.extract(sentence)
-          .filter(confExtr => confExtr._1 > 0.1)
-          .toSeq
-          .foreach(confExtr => {
-          val extrInstance = confExtr._2
-          argTyper.assignTypes(extrInstance) match {
-            case Some(typedExtrInstance:TypedExtractionInstance) => exportTypeSelectionFormat(typedExtrInstance, context)
-            case _ => //logger.error("Failed to extract head word for extrInstance: " + extrInstance.extr.arg1.nodes.seq.toString + " and " + extrInstance.extr.arg2.nodes.seq.toString)
-          }
-        })
+        val extractions = extractor.extract(sentence)
+        if (!extractions.isEmpty){
+          val sentenceTokens = extractions.head._2.sentence.nodes.toSeq
+          val neTypes = argTyper.getNETypes(sentenceTokens).toSeq
+
+          val assignTypes = argTyper.assignTypes(neTypes) _
+
+          extractions.filter(confExtr => confExtr._1 > 0.1)
+            .toSeq
+            .foreach(confExtr => {
+            val extrInstance = confExtr._2
+            assignTypes(extrInstance) match {
+              case Some(typedExtrInstance:TypedExtractionInstance) => exportTypeSelectionFormat(typedExtrInstance, context)
+              case _ => //logger.error("Failed to extract head word for extrInstance: " + extrInstance.extr.arg1.nodes.seq.toString + " and " + extrInstance.extr.arg2.nodes.seq.toString)
+            }
+          })
+        }else{
+          logger.error("No extractions from sentence: %s\t%s\t%s".format(docid, sentid, sentence))
+        }
       }else{
         logger.error("Skipping line with < 6 fields: " + splits.size + " and string: " + splits.mkString("_,_"))
       }
@@ -87,6 +96,7 @@ class TypeSelectionMapper extends Mapper[LongWritable, Text, Text, Text] {
         logger.error(e.getStackTraceString)
       }
     }
+
   }
 
   def exportTypeSelectionFormat(typedExtrInstance: TypedExtractionInstance, context: Mapper[LongWritable, Text, Text, Text]#Context) {
