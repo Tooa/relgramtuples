@@ -318,7 +318,6 @@ object HeadExtractor {
     if (truncateIndex > 0 && subTokens.take(truncateIndex).find(p => (p.isPronoun || p.isNoun)) != None){//&& returnTokens.find(p => p.isNoun).isDefined){
       subTokens = subTokens.take(truncateIndex)
     }else if(subTokens.find(p => contentToken(p)) == None){
-      logger.error("No allowed tokens in phrase at: " + subTokens)
       return None
     }
 
