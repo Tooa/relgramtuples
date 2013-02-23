@@ -55,7 +55,7 @@ object RelgramTuplesApp{
         relgramTuples.foreach(relgramTuple => {
           val typedExtrInstance = relgramTuple.typedExtrInstance
           val arg1Head = typedExtrInstance.arg1Head.map(h => h.string).mkString(" ")
-          val relHead = typedExtrInstance.extractionInstance.extr.rel.text
+          val relHead = typedExtrInstance.relHead.map(h => h.string).mkString(" ")
           val arg2Head = typedExtrInstance.arg2Head.map(h => h.string).mkString(" ")
           def typesString(argTypes:Iterable[Type]) = argTypes.map(atype => atype.name + ":" + atype.source)
           val arg1String = "%s\t%s\t%s".format(typedExtrInstance.extractionInstance.extr.arg1.text, arg1Head, typesString(typedExtrInstance.arg1Types).mkString(","))

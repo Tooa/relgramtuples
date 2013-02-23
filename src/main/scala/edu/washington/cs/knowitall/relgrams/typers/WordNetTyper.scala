@@ -70,7 +70,6 @@ object WordNetTyper{
       if(index < 0){
         index = sentTokens.indexOf(filteredToken)
       }
-      //println("Index[%s] = %d".format(filteredToken, index))
       val postag = if (index >= 0){
         sentPosTags(index)
       }else{
@@ -82,7 +81,6 @@ object WordNetTyper{
           "NN"
       }
       postags += postag
-      //println("token: " + token + " tag: " + postag)
     })
     return postags
   }
@@ -98,6 +96,13 @@ object WordNetTyper{
 
 
 
+    var ptoken = new PostaggedToken("NN", "number", 0)
+    var isGroup = wnTyper.isGroupQuantityAmountNumberOrPart(ptoken)//, 0::1::2::Nil, 3, false)
+    println("Is Group: " + isGroup)
+    exit
+
+
+
     var ptokens = new PostaggedToken("NN", "plan", 0)::Nil
     var wtypes = wnTyper.assignTypes("plan", ptokens)
     //var wtypes = wnTyper.getWordnetTypes(ptokens, 1::2::3::Nil, 3, false)
@@ -110,8 +115,8 @@ object WordNetTyper{
 
 
 
-    var ptoken = new PostaggedToken("NN", "Bank", 0)
-    var isGroup = wnTyper.isGroupQuantityAmountNumberOrPart(ptoken)//, 0::1::2::Nil, 3, false)
+    ptoken = new PostaggedToken("NN", "Bank", 0)
+    isGroup = wnTyper.isGroupQuantityAmountNumberOrPart(ptoken)//, 0::1::2::Nil, 3, false)
     println("Is Group: " + isGroup)
 
     ptoken = new PostaggedToken("NN", "percentage", 0)
@@ -302,6 +307,7 @@ class WordNetTyper {
   }
 
   val Xclasses = "number:1,group:0,quantity:0,part:0,amount:0,percentage:0,proportion:3"
+  val XclassNames = "number,group,quantity,part,amount,percentage,proportion".split(",").toSet
   def setup(wnhome:String, typesFile: String, senses:Seq[Int],  filterTypes:Boolean, retainUnmappedTypes:Boolean) {
     setWNResources(wnhome)
     loadTypes(typesFile)
@@ -444,7 +450,6 @@ class WordNetTyper {
   def findNoun(toSearch: Seq[PostaggedToken]): (String, Option[IIndexWord]) = {
     if (toSearch == Nil) return ("", None)
     // search for word in WordNet
-    //println("searchingfor: " + toSearch.mkString(","))
     val strings = toSearch.map(token => token.string)
     val stemmedWord = stem(strings.mkString(" "), 0)
 
@@ -455,7 +460,6 @@ class WordNetTyper {
       if (toSearch.length > 1 && toSearch(1).postag == "IN") {
         findNoun(List(toSearch(0)))
       } else {
-        //println("SEarching for tail: " + toSearch.tail.mkString(","))
         findNoun(toSearch.tail)
       }
     } else {
@@ -463,7 +467,6 @@ class WordNetTyper {
       val idxWord = dict.getIndexWord(stemmedWord, POS.NOUN)
 
       if (idxWord != null && wordnetBlacklist.contains(stemmedWord) == false) {
-        //println("Index word: " + idxWord)
         return (stemmedWord, Some(idxWord))
       }else {
         // word not found in WordNet. do the same check for "of"
@@ -471,7 +474,6 @@ class WordNetTyper {
         if (toSearch.length > 1 && toSearch(1).postag == "IN") {
           findNoun(List(toSearch(0)))
         } else {
-          //println("SEarching for tail: " + toSearch.tail.mkString(","))
           findNoun(toSearch.tail)
         }
       }
@@ -492,7 +494,6 @@ class WordNetTyper {
       stemmer.findStems(word.replaceAll("""[^a-zA-Z0-9]""", " "), POS.NOUN).toSeq
     }catch{
       case e:Exception => {
-        println("Caught exception stemming word: " + word + "\n" + e.toString)
         Seq[String]()
       }
       case _ => {
@@ -508,6 +509,11 @@ class WordNetTyper {
 
 
   def isGroupQuantityAmountNumberOrPart(token: PostaggedToken): Boolean = {
+    if(token.string.contains("number")){
+      println(token + ":" + XclassNames)
+    }
+
+    if(XclassNames.contains(token.string)) return true
     val (matchString:String, hypernyms:Seq[Set[ISynset]]) = hypernymStream(token::Nil, senses)
     hypernyms.iterator.filter(st => st.size > 0).foreach(st => {
       st.foreach(s => if (typeSynsetIds.contains(s.getID.toString)) {

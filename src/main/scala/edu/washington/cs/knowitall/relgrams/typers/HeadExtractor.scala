@@ -50,9 +50,9 @@ object HeadExtractor {
     })
   }
 
-
-  val stopTagsForRelation = new HashSet[String]
-  stopTagsForRelation += "MD"
+  val stopPosTagsString = "MD,JJ,JJR,JJS,RB,RBR,RBS,CC,UH,PRP,PRP$,DT,WP,WP$,WRB,CD"
+  val stopTagsForRelation = stopPosTagsString.split(",").toSet
+  /**stopTagsForRelation += "MD"
   stopTagsForRelation += "JJ"
   stopTagsForRelation += "JJR"
   stopTagsForRelation += "JJS"
@@ -64,13 +64,14 @@ object HeadExtractor {
   stopTagsForRelation += "DT"
   stopTagsForRelation += "WP"
   stopTagsForRelation += "WP$"
-  stopTagsForRelation += "WRB"
+  stopTagsForRelation += "WRB"      */
 
 
 
+  val stopwordsForRelations = "has,have,had,did,do".split(",").toSet
 
 
-  val stopwordsForRelations = new HashSet[String]
+  /**val stopwordsForRelations = new HashSet[String]
   stopwordsForRelations += "be"
   stopwordsForRelations += "have"
   stopwordsForRelations += "it"
@@ -86,44 +87,15 @@ object HeadExtractor {
   stopwordsForRelations += "that"
   stopwordsForRelations += "these"
   stopwordsForRelations += "whose"
-  stopwordsForRelations += "'s"
+  stopwordsForRelations += "'s"       */
 
-  def relHead(tokens:Seq[PostaggedToken]) = tokens.filter(token => !stopTagsForRelation.contains(token.postag) && !stopwordsForRelations.contains(token.string))
-  def relHeadString(tokens:Seq[PostaggedToken]):Option[String] = {
-    val headTokens = relHead(tokens)
-    if(headTokens.isEmpty == false){
-      Some(headTokens.mkString(" "))
-    }else{
-      None
-    }
+  def relHead(tokens:Seq[PostaggedToken]) = {
+    val outTokens = tokens.filter(token => !(stopTagsForRelation.contains(token.postag) ||
+                             stopwordsForRelations.contains(token.string)))
+    if(outTokens.isEmpty) None else Some(outTokens)
   }
-  def headWordsForRelation(relText:String, relPosTagString:String): String = {
-    headWordsForRelation(relText.split(" "), relPosTagString.split(" ")) match{
-      case Some(x:String) => x
-      case None => relText
-    }
-  }
-  def headWordsForRelation(words: Seq[String], postags: Seq[String]): Option[String] = {
-    var outtokens = new ArrayBuffer[String]
-    for (i <- 0 until words.size) {
-      val token = words(i)
-      val pos = postags(i)
-      if (stopTagsForRelation.contains(pos) == false &&
-        stopwordsForRelations.contains(token) == false) {
-        outtokens += token
-      }
-
-    }
-    if (outtokens.size >= 0) {
-      return Some(words.mkString(" "))
-    }
-    None
-  }
-
-
 
   val pronouns = ("you"::"i"::"he"::"she"::"they"::"it"::"them"::"him"::"her"::"whom"::Nil).toSet
-
 
   def replacePronouns(text: String): String = {
     if (pronouns.contains(text)){
@@ -169,6 +141,11 @@ object HeadExtractor {
   }
 
 
+  def truncateBeforeRelativeClause(intokens:Seq[PostaggedToken]) = {
+    val index = intokens.indexWhere(p => p.postag.startsWith("W"))
+    if(index > 0) intokens.take(intokens.indexWhere(p => p.postag.startsWith("W"))) else intokens
+  }
+
   def removeTokensBeforeAppositive (tokens: Seq[PostaggedToken]): Seq[PostaggedToken] = {
     val apostropheIndex = tokens.indexWhere(token => token.string.equals("POS") || token.postag.equals("POS"))
     if(apostropheIndex > 0 && (apostropheIndex+1) < tokens.size){
@@ -199,13 +176,12 @@ object HeadExtractor {
   def setWnHome(wnHomeInp:String){
     wnHome = wnHomeInp
   }
-  def getWordnetTyper(wnhome: String, wnTypesFile:String) = new WordNetTyper(wnhome, "", 1::Nil, true, true)
+
 
   def findNPofNP(tokens:Seq[PostaggedToken]):Seq[PostaggedToken] = {
+
     val leadingOfIndex = tokens.indexWhere(token => token.string.equals("of") || token.string.equals("in"))
     if(leadingOfIndex > 0){
-
-      //println("leading of index: " + leadingOfIndex + " for tokens: " + tokens.map(x => x.string).mkString(" "))
       /**
        * First step is to find the head noun of an argument phrase, as follows:
           If the phrase begins with "NP of NP", check the WN type and hypernyms of the first NP.
@@ -218,17 +194,16 @@ object HeadExtractor {
       }).mkString(" ")
 
       if(leadingModPatterns.findFirstIn(posTokenString) != None){
-        //println("dropping leading of tokens from: " + tokens.mkString(" ") + " with " + posTokenString)
         return tokens.drop(leadingOfIndex+1)
       }
 
       var leadingNPs = tokens.take(leadingOfIndex).filter(x => x.isNoun)
       var trailingNPs = tokens.drop(leadingOfIndex+1).filter(x => x.isNoun)
-
       if (leadingNPs.find(x => !x.isProperNoun) == None){
         return tokens
       }
-      val wnTyper = wnTypers.getOrElseUpdate(Thread.currentThread(), getWordnetTyper(wnHome, ""))
+      def getWordnetTyper = new WordNetTyper(wnHome, "", 1::Nil, true, true)
+      val wnTyper = wnTypers.getOrElseUpdate(Thread.currentThread(), getWordnetTyper)
       leadingNPs.filter(x => !x.isProperNoun).foreach(x => if (wnTyper.isGroupQuantityAmountNumberOrPart(x)) return trailingNPs)
       return leadingNPs
     }
@@ -277,22 +252,16 @@ object HeadExtractor {
 
   def argumentHead(tokens:Seq[PostaggedToken]):Option[Seq[PostaggedToken]] = {
 
-    //val argString = tokens.map(token => token.string).mkString(" ")
-    var subTokens = tokens.take(tokens.indexWhere(p => p.postag.startsWith("W")))
-    /**val w_index = tokens.indexWhere(p => p.postag.startsWith("W"))
-    subTokens = if(w_index > 0){
-      tokens.take(w_index)
-    }else{
-      tokens
-    }  */
 
-    subTokens = findNPofNP(subTokens)
-    if (subTokens.isEmpty){
-      subTokens = tokens
+
+    var subTokens = truncateBeforeRelativeClause(tokens)
+
+    var returnTokens = findNPofNP(subTokens)
+    if (!returnTokens.isEmpty){
+      subTokens = returnTokens
     }
 
-
-    var returnTokens = removeTokensBeforeAppositive(subTokens) //Jan 30    -- should fix Fazil 's rank to rank instead of Fazil.
+    returnTokens = removeTokensBeforeAppositive(subTokens) //Jan 30    -- should fix Fazil 's rank to rank instead of Fazil.
     if (!returnTokens.isEmpty){
       subTokens = returnTokens
     }
@@ -301,7 +270,6 @@ object HeadExtractor {
     if (!returnTokens.isEmpty){
       subTokens = returnTokens
     }
-
 
     returnTokens = removeTokensAfterConjunctionsOrPrepositions(subTokens) //Check this. Why isn't this filtering out which led to....
     if(!returnTokens.isEmpty){

@@ -5,6 +5,9 @@ import edu.washington.cs.knowitall.tool.tokenize.Token
 import edu.washington.cs.knowitall.tool.postag.PostaggedToken
 import edu.washington.cs.knowitall.tool.typer.Type
 import org.slf4j.LoggerFactory
+import edu.washington.cs.knowitall.openparse.extract.Extraction.Part
+import collection.mutable.{HashSet, ArrayBuffer}
+import collection.mutable
 
 
 /**
@@ -35,19 +38,63 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
 
   def getNETypes(sentenceTokens:Seq[Token]) = neTyper.assignTypesToSentence(sentenceTokens)
 
+  val conjunctions = new HashSet[String]
+ // conjunctions += "for"
+  conjunctions += "and"
+  conjunctions += "nor"
+  conjunctions += "but"
+  conjunctions += "or"
+  conjunctions += "yet"
+  conjunctions += "so"
+
+  val beVerbs = new HashSet[String]
+  beVerbs += "be"
+  beVerbs += "is"
+  beVerbs += "are"
+  beVerbs +="was"
+  beVerbs += "were"
+
+  def assignTag(token: String): String = {
+    if (beVerbs.contains(token)) {
+      "VB"
+    }else if (conjunctions.contains(token)){
+      "CC"
+    }else {
+      "PP"
+    }
+
+
+  }
+  def addMissingTokens(field:Part) = {
+    val text = field.text
+    val nodes = field.nodes.map(node => node.text -> node).toMap
+    def makeToken(word:String) = {
+      nodes.getOrElse(word, new PostaggedToken(assignTag(word), word, 0))
+    }
+    text.split(" ").map(word => makeToken(word))
+  }
   def assignTypes(neTypes:Seq[Type])(extractionInstance:OllieExtractionInstance):Option[TypedExtractionInstance] = {
     val arg1Tokens = extractionInstance.extr.arg1.nodes.toSeq
     val arg2Tokens = extractionInstance.extr.arg2.nodes.toSeq
-    val relTokens = extractionInstance.extr.rel.nodes.toSeq
+    //val relTokens = extractionInstance.extr.rel.nodes.toSeq
+    //println("relTokens: " + relTokens)
+    val relTokens = addMissingTokens(extractionInstance.extr.rel)
+    //println("Added Rel tokens: " + addedRelTokens.map(token => token.string + ":" + token.postag).mkString(","))
+    //println("rel: " + extractionInstance.extr.rel.text)
     val arg1HeadTokensOption = HeadExtractor.argumentHead(arg1Tokens)
     val arg2HeadTokensOption = HeadExtractor.argumentHead(arg2Tokens)
-    var relHeadTokens = HeadExtractor.relHead(relTokens)
-    relHeadTokens = if (relHeadTokens.isEmpty) relTokens else relHeadTokens
-    (arg1HeadTokensOption,  arg2HeadTokensOption) match {
-      case (Some(arg1HeadTokens:Seq[PostaggedToken]), Some(arg2HeadTokens:Seq[PostaggedToken])) => {
+    val relHeadTokensOption = HeadExtractor.relHead(relTokens)
+    //relHeadTokens = if (relHeadTokens.isEmpty) relTokens else relHeadTokens
+    (arg1HeadTokensOption, relHeadTokensOption, arg2HeadTokensOption) match {
+      case (Some(arg1HeadTokens:Seq[PostaggedToken]),
+            Some(relHeadTokens:Seq[PostaggedToken]),
+            Some(arg2HeadTokens:Seq[PostaggedToken])) => {
         val arg1Types = assignTypes(arg1HeadTokens, neTypes)
         val arg2Types = assignTypes(arg2HeadTokens, neTypes)
 
+        val lemmatizedRelHead =HeadExtractor.lemmatize(relHeadTokens)
+        //println("Rel: " + relHeadTokens.mkString(","))
+        //println("Lemmas: " + lemmatizedRelHead.mkString(","))
         Some(new TypedExtractionInstance(extractionInstance,
           HeadExtractor.lemmatize(arg1HeadTokens),
           HeadExtractor.lemmatize(relHeadTokens),
@@ -69,11 +116,8 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
   private def assignTypes(argHeadTokens: Seq[PostaggedToken], neTypes: Seq[Type]): Iterable[Type] = {
 
     //Get wordnet types
-    val wordNetHead = argHeadTokens.filter(p => (!p.isProperNoun && !p.isPronoun))// || p.postag.equals("CD"))
-
-
+    val wordNetHead = argHeadTokens.filter(p => (!p.isProperNoun && !p.isPronoun))
     val wordNetHeadText = wordNetHead.map(x => x.string).mkString(" ")
-    if (wordNetHeadText.contains("us")) println(wordNetHead.mkString(" "))
     val wnArgTypes = if(!wordNetHead.isEmpty) wnTyper.assignTypes(wordNetHeadText, wordNetHead) else Iterable[Type]()
 
     //Named entity types

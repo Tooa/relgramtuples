@@ -77,7 +77,8 @@ class NETyper(val modelFile:String) {
   val netyper = fromModelUrl(new File(modelFile))
 
   def rename(old: Type): Type = {
-    val newName = old.name.replaceAll("""Stanford""", "").toLowerCase
+    var newName = old.name.replaceAll("""Stanford""", "").toLowerCase
+    newName = if (newName.equals("date")) "time_unit" else newName
     new Type(newName, old.source, old.interval, old.text)
   }
 
