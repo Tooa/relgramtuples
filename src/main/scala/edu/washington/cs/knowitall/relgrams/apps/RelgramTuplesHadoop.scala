@@ -211,8 +211,8 @@ object RelgramTuplesHadoop{
     //Output: List of rel-view grams <vType, first + second + hashes + count>
 
     ejob setMapperClass classOf[RelgramTuplesMapper]
-    ejob setReducerClass classOf[RelgramTuplesReducer]
-    ejob.setNumReduceTasks(1)
+    //ejob setReducerClass classOf[RelgramTuplesReducer]
+    //ejob.setNumReduceTasks(1)
 
     FileInputFormat.addInputPath(ejob, new Path(inputPath))
     FileOutputFormat.setOutputPath(ejob, new Path(outputPath))
