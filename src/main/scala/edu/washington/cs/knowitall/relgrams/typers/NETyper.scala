@@ -58,7 +58,7 @@ object NumberFinder{
 
   def findNumbers(argTokens:Seq[PostaggedToken]) = {
     val argString = argTokens.map(at => at.string).mkString(" ")
-    val numType = new Type("number:Number", "NUM", TypersUtil.span(argTokens), argString)
+    val numType = new Type("number", "NUM", TypersUtil.span(argTokens), argString)
     if (argTokens.find(token => !token.postag.equals("CD")) == None){
       numType::Nil
     }
@@ -71,6 +71,19 @@ object NumberFinder{
     }
   }
 
+}
+
+object DayTyper{
+  val daysOfTheWeek = "monday,tuesday,wednesday,thursday,friday,saturday,sunday".split(",").toSet
+  def assignTypes(argTokens:Seq[PostaggedToken]):Iterable[Type] = {
+    val argstring = argTokens(0).string.toLowerCase()
+    val dayType = new Type("time_unit", "Day", TypersUtil.span(argTokens), argstring)
+    if (argTokens.size == 1 && daysOfTheWeek.contains(argstring)) {
+      dayType::Nil
+    }else{
+      Iterable[Type]()
+    }
+  }
 }
 class NETyper(val modelFile:String) {
   import NETyper._
