@@ -35,7 +35,7 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
   val prnTyper = new PronounTyper
   val personTyper = new PersonTyper
   val neTyper = new NETyper(neModelFile)
-  val dayTyper = new DayTyper
+
   def getNETypes(sentenceTokens:Seq[Token]) = neTyper.assignTypesToSentence(sentenceTokens)
 
   val conjunctions = new HashSet[String]
@@ -135,8 +135,8 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
       Iterable[Type]()
     }
 
-    val dayTyper =
-    (wnArgTypes ++ neArgTypes ++ prnTypes ++ pesonTypes ++ numberTypes).toSet
+    val dayTypes = DayTyper.assignTypes(argHeadTokens)
+    (wnArgTypes ++ neArgTypes ++ prnTypes ++ pesonTypes ++ numberTypes ++ dayTypes).toSet
   }
 
   private def assignNETypes(types:Seq[Type], tokens:Seq[Token]):Iterable[Type] = {
