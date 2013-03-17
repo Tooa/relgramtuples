@@ -510,10 +510,6 @@ class WordNetTyper {
 
 
   def isGroupQuantityAmountNumberOrPart(token: PostaggedToken): Boolean = {
-    if(token.string.contains("number")){
-      println(token + ":" + XclassNames)
-    }
-
     if(XclassNames.contains(token.string)) return true
     val (matchString:String, hypernyms:Seq[Set[ISynset]]) = hypernymStream(token::Nil, senses)
     hypernyms.iterator.filter(st => st.size > 0).foreach(st => {
