@@ -212,7 +212,7 @@ object RelgramTuplesHadoop{
 
     ejob setMapperClass classOf[RelgramTuplesMapper]
     //ejob setReducerClass classOf[RelgramTuplesReducer]
-    //ejob.setNumReduceTasks(1)
+    ejob.setNumReduceTasks(0)
 
     FileInputFormat.addInputPath(ejob, new Path(inputPath))
     FileOutputFormat.setOutputPath(ejob, new Path(outputPath))

@@ -361,7 +361,8 @@ class WordNetTyper {
     }else{
       logger.error("Type file is not a valid file: " + typesFile)
     }
-    logger.debug("Number of wordnet types: " + types.size)
+    logger.info("Number of wordnet types: " + types.size)
+    println("Number of wordnet types: " + types.size)
   }
 
 
