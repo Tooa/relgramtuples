@@ -217,6 +217,7 @@ object RelgramTuplesHadoop{
     FileInputFormat.addInputPath(ejob, new Path(inputPath))
     FileOutputFormat.setOutputPath(ejob, new Path(outputPath))
 
+
     ejob.waitForCompletion(true)
 
   }
