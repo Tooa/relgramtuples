@@ -52,46 +52,11 @@ object HeadExtractor {
 
   val stopPosTagsString = "MD,JJ,JJR,JJS,RB,RBR,RBS,CC,UH,PRP,PRP$,DT,WP,WP$,WRB,CD"
   val stopTagsForRelation = stopPosTagsString.split(",").toSet
-  /**stopTagsForRelation += "MD"
-  stopTagsForRelation += "JJ"
-  stopTagsForRelation += "JJR"
-  stopTagsForRelation += "JJS"
-  stopTagsForRelation += "CC"
-  stopTagsForRelation += "UH"
-  stopTagsForRelation += "RP"
-  stopTagsForRelation += "PRP"
-  stopTagsForRelation += "PRP$"
-  stopTagsForRelation += "DT"
-  stopTagsForRelation += "WP"
-  stopTagsForRelation += "WP$"
-  stopTagsForRelation += "WRB"      */
-
-
-
   val stopwordsForRelations = "has,have,had,did,do".split(",").toSet
-
-
-  /**val stopwordsForRelations = new HashSet[String]
-  stopwordsForRelations += "be"
-  stopwordsForRelations += "have"
-  stopwordsForRelations += "it"
-  stopwordsForRelations += "he"
-  stopwordsForRelations += "she"
-  stopwordsForRelations += "they"
-  stopwordsForRelations += "them"
-  stopwordsForRelations += "his"
-  stopwordsForRelations += "her"
-  stopwordsForRelations += "their"
-  stopwordsForRelations += "its"
-  stopwordsForRelations += "this"
-  stopwordsForRelations += "that"
-  stopwordsForRelations += "these"
-  stopwordsForRelations += "whose"
-  stopwordsForRelations += "'s"       */
 
   def relHead(tokens:Seq[PostaggedToken]) = {
     val outTokens = tokens.filter(token => !(stopTagsForRelation.contains(token.postag) ||
-                             stopwordsForRelations.contains(token.string)))
+                                             stopwordsForRelations.contains(token.string)))
     if(outTokens.isEmpty) None else Some(outTokens)
   }
 

@@ -66,18 +66,20 @@ class RelgramTuplesReducer extends IdentityReducer
 
 class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
   val logger = LoggerFactory.getLogger(this.getClass)
-  var relgramExtractor:RelgramTuplesExtractor = null
+  var tuplesExtractor:RelgramTuplesExtractor = null
 
   override def setup(context:Mapper[LongWritable,Text, Text, Text] #Context){
     val maltParserPath = context.getConfiguration.get("maltParserPath", "NA")
-    val neModelFile = context.getConfiguration.get("neModelFile", "NA")
+    val ne7ModelFile = context.getConfiguration.get("ne7ModelFile", "NA")
+    val ne3ModelFile = context.getConfiguration.get("ne3ModelFile", "NA")
     val wnHome = context.getConfiguration.get("wnHome", "NA")
     val wnTypesFile = context.getConfiguration.get("wnTypesFile", "NA")
     val numSenses = context.getConfiguration.getInt("numWNSenses", 1)
-
+    val dontAdjustOffsets = context.getConfiguration.getBoolean("dontAdjustOffsets", false)
+    println("DontAdjust: " + dontAdjustOffsets)
     val extractor = new Extractor(maltParserPath)
-    val argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile, numSenses)
-    relgramExtractor = new RelgramTuplesExtractor(extractor, argTyper)
+    val argTyper = new ArgumentsTyper(ne7ModelFile, ne3ModelFile, wnHome, wnTypesFile, numSenses)
+    tuplesExtractor = new RelgramTuplesExtractor(extractor, argTyper, dontAdjustOffsets)
   }
 
 
@@ -90,7 +92,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
         val docid = splits(2)
         val sentid = splits(3).toInt
         val sentence = splits(4)
-        val relgramTuples = relgramExtractor.extract(docid, sentid, sentence)
+        val relgramTuples = tuplesExtractor.extract(docid, sentid, sentence)
         relgramTuples.foreach(relgramTuple => exportRelgramTuple(relgramTuple, context))
       }else{
         logger.error("Skipping line with < 6 fields: " + splits.size + " and string: " + splits.mkString("_,_"))
@@ -135,34 +137,16 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
     }
 
     def tokensToString(tokens:Seq[Token]) = tokens.map(t => t.string).mkString(" ")
+
     val headTuple = "%s\t%s\t%s".format(tokensSpanString(typedExtractionInstance.arg1Head),
-      tokensSpanString(typedExtractionInstance.relHead),
-      tokensSpanString(typedExtractionInstance.arg2Head))
+                                        tokensSpanString(typedExtractionInstance.relHead),
+                                        tokensSpanString(typedExtractionInstance.arg2Head))
 
     def typesString(types:Iterable[Type]) = types.map(t => "Type:" + t.name).mkString(",")//"Type:" + t.name + ":" + t.source).mkString(",")
     val key = "%s\t%s\t%s\t%d".format(docid, sentid, sentence, extrid)
     val value = "%s\t%s\t%s\t%s\t%s".format(hashes.mkString(","), origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
     context.write(new Text(key), new Text(value))
   }
-
-  /*8 //sid sentence (orig) (head) arg1types arg2types
-def exportRelgramTuples(docid:String, sid:String, sentence:String, hashes:Iterable[Int], eid:Int, template:String, typedExtractionInstance:TypedExtractionInstance, context: Mapper[LongWritable, Text, Text, Text]#Context){
-
-  val origTuple = "%s\t%s\t%s".format(typedExtractionInstance.extractionInstance.extr.arg1.text, typedExtractionInstance.extractionInstance.extr.rel.text,
-                                      typedExtractionInstance.extractionInstance.extr.arg2.text)
-
-  def tokensToString(tokens:Seq[Token]) = tokens.map(t => t.string).mkString(" ")
-  val headTuple = "%s\t%s\t%s".format(tokensToString(typedExtractionInstance.arg1Head),
-                                      tokensToString(typedExtractionInstance.relHead),
-                                      tokensToString(typedExtractionInstance.arg2Head))
-
-
-  def typesString(types:Iterable[Type]) = types.map(t => t.name + ":" + t.source).mkString(",")
-  val key = "%s\t%s\t%s\t%d".format(docid, sid, sentence, eid)
-  val value = "%s\t%s\t%s\t%s\t%s".format(template, origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
-  context.write(new Text(key), new Text(value))
-}   */
-
 }
 
 object RelgramTuplesHadoop{

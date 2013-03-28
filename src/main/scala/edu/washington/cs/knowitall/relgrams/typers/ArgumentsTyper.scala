@@ -26,7 +26,7 @@ case class TypedExtractionInstance(extractionInstance:OllieExtractionInstance,
   override def toString:String = "%s\t%s\t%s\t%s\t%s\t%s".format(extractionInstance.toString, arg1Head.mkString(" "), relHead.mkString(" "), arg2Head.mkString(" "), arg1Types.mkString(" "), arg2Types.mkString(" "))
 }
 
-class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wordnetTypesFile:String, val wnSenses:Int) {
+class ArgumentsTyper(val ne7ModelFile:String, val ne3ModelFile:String, val wordnetLocation:String, val wordnetTypesFile:String, val wnSenses:Int) {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -34,9 +34,9 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
   val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, (1 until wnSenses+1), true, false)
   val prnTyper = new PronounTyper
   val personTyper = new PersonTyper
-  val neTyper = new NETyper(neModelFile)
+  val neTyper = new NETyper(ne7ModelFile, ne3ModelFile)
 
-  def getNETypes(sentenceTokens:Seq[Token]) = neTyper.assignTypesToSentence(sentenceTokens)
+  def getNETypes(sentenceTokens:Seq[Token], dontAdjustOffsets:Boolean) = if(!dontAdjustOffsets) neTyper.assignTypesToSentence(sentenceTokens) else neTyper.assignTypesToSentenceNoAdjustments(sentenceTokens)
 
   val conjunctions = new HashSet[String]
  // conjunctions += "for"
@@ -76,25 +76,17 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
   def assignTypes(neTypes:Seq[Type])(extractionInstance:OllieExtractionInstance):Option[TypedExtractionInstance] = {
     val arg1Tokens = extractionInstance.extr.arg1.nodes.toSeq
     val arg2Tokens = extractionInstance.extr.arg2.nodes.toSeq
-    //val relTokens = extractionInstance.extr.rel.nodes.toSeq
-    //println("relTokens: " + relTokens)
     val relTokens = addMissingTokens(extractionInstance.extr.rel)
-    //println("Added Rel tokens: " + addedRelTokens.map(token => token.string + ":" + token.postag).mkString(","))
-    //println("rel: " + extractionInstance.extr.rel.text)
     val arg1HeadTokensOption = HeadExtractor.argumentHead(arg1Tokens)
     val arg2HeadTokensOption = HeadExtractor.argumentHead(arg2Tokens)
     val relHeadTokensOption = HeadExtractor.relHead(relTokens)
-    //relHeadTokens = if (relHeadTokens.isEmpty) relTokens else relHeadTokens
+
     (arg1HeadTokensOption, relHeadTokensOption, arg2HeadTokensOption) match {
       case (Some(arg1HeadTokens:Seq[PostaggedToken]),
             Some(relHeadTokens:Seq[PostaggedToken]),
             Some(arg2HeadTokens:Seq[PostaggedToken])) => {
         val arg1Types = assignTypes(arg1HeadTokens, neTypes)
         val arg2Types = assignTypes(arg2HeadTokens, neTypes)
-
-        val lemmatizedRelHead =HeadExtractor.lemmatize(relHeadTokens)
-        //println("Rel: " + relHeadTokens.mkString(","))
-        //println("Lemmas: " + lemmatizedRelHead.mkString(","))
         Some(new TypedExtractionInstance(extractionInstance,
           HeadExtractor.lemmatize(arg1HeadTokens),
           HeadExtractor.lemmatize(relHeadTokens),
@@ -145,7 +137,19 @@ class ArgumentsTyper(val neModelFile:String, val wordnetLocation:String, val wor
      * Tests whether typ interval is a subset of the interval span of the tokens.
      * or if the span interval is a subset of the typ interval.
      */
-    types.filter(typ => span.subset(typ.interval))
+    val argString = tokens.map(x => x.string).mkString(" ").toLowerCase
+    var somematch = false
+    val filteredTypes = types.filter(typ => {
+      val out = span.subset(typ.interval) || argString.contains(typ.text.toLowerCase)
+      somematch |= out
+      out
+    })
+    /**if (types.size > 0 && !somematch) {
+      println("No Match for: " + tokens.map(x => x.string + ':' + x.interval) + " from types: " + types.map(t => t.text + ':' + t.interval).mkString(","))
+    }else if (types.size > 0 && somematch){
+      println("Matching types for: " + tokens.map(x => x.string + ':' + x.interval) + " from types: " + filteredTypes.map(t => t.text + ':' + t.interval).mkString(","))
+    } */
+    filteredTypes
   }
 
 

@@ -20,11 +20,11 @@ object TypersUtil {
 
   def startingOffset(tokens:Seq[Token]) = tokens.head.offset
 
-  def span(tokens:Seq[Token]) = {
+  def span(tokens:Seq[Token]): Interval = {
     val (start:Int, end:Int) = startEnd(tokens)
     Interval.open(start, end)
   }
-  def startEnd(tokens:Seq[Token]) = {
+  def startEnd(tokens:Seq[Token]): (Int, Int) = {
     val start = tokens.map(t => t.interval.start).min
     val end = tokens.map(t => t.interval.end).max
     (start, end)

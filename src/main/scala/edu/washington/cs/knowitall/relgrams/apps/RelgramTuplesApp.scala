@@ -28,21 +28,25 @@ object RelgramTuplesApp{
     var wnHome = "/home/niranjan/local/Wordnet3.0"
     var wnTypesFile = "wordnet-classes-large.txt"
 
-    var neModelFile = "/Users/niranjan/work/projects/git/scala/argtyping/src/main/resources/english.muc.7class.nodistsim.prop"
+    var ne7ModelFile = "/Users/niranjan/work/projects/git/scala/argtyping/src/main/resources/english.muc.7class.nodistsim.prop"
+    var ne3ModelFile = "/Users/niranjan/work/projects/git/scala/argtyping/src/main/resources/english.all.3class.nodistsim.prop"
+    var dontAdjustOffsets = false
     var maltParserPath="/Users/niranjan/work/projects/git/relgrams/relgramtuples/src/main/resources/engmalt.linear-1.7.mco"
     val parser = new OptionParser() {
       arg("inputPath", "hdfs input path", {str => inputPath = str})
       arg("outputPath", "hdfs output path", { str => outputPath = str })
       opt("wnHome", "wordnet home", { str => wnHome = str })
       opt("wnTypesFile", "wordnet home", { str => wnTypesFile = str })
-      opt("neModelFile", "Stanford NE model file.", { str => neModelFile = str })
+      opt("ne7ModelFile", "Stanford NE 7 class model file.", { str => ne7ModelFile = str })
+      opt("ne3ModelFile", "Stanford NE 3 class model file.", { str => ne3ModelFile = str })
+      opt("dontAdjustOffsets", "Don't adjust offsets.", {str => dontAdjustOffsets = str.toBoolean})
       opt("mpp", "maltParserPath", "Malt parser file path.", {str => maltParserPath = str})
     }
 
     if (!parser.parse(args)) return
     val extractor = new Extractor(maltParserPath)
-    val argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile, 1)
-    val relgramExtractor = new RelgramTuplesExtractor(extractor, argTyper)
+    val argTyper = new ArgumentsTyper(ne7ModelFile, ne3ModelFile, wnHome, wnTypesFile, 1)
+    val relgramExtractor = new RelgramTuplesExtractor(extractor, argTyper, dontAdjustOffsets)
     val writer = new PrintWriter(outputPath, "utf-8")
     writer.println("%s-%s\t%s\t%s\t%s\t%s".format("DOCID", "SENTID", "Tuple Part", "Original", "Head", "Type"))
     Source.fromFile(inputPath).getLines().foreach(line => {

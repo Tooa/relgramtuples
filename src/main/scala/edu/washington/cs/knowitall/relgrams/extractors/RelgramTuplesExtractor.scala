@@ -18,7 +18,7 @@ import edu.washington.cs.knowitall.tool.parse.graph.DependencyNode
 import edu.washington.cs.knowitall.tool.typer.Type
 import edu.washington.cs.knowitall.collection.immutable.Interval
 
-class RelgramTuplesExtractor(extractor:Extractor, argTyper:ArgumentsTyper) {
+class RelgramTuplesExtractor(extractor:Extractor, argTyper:ArgumentsTyper, dontAdjustOffsets:Boolean) {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -29,7 +29,7 @@ class RelgramTuplesExtractor(extractor:Extractor, argTyper:ArgumentsTyper) {
     val sortedExtrInstances = extractOllieInstances(sentence)
     if (!sortedExtrInstances.isEmpty){
       val sentenceTokens = sortedExtrInstances.head._2.sentence.nodes.toSeq
-      val neTypes = argTyper.getNETypes(sentenceTokens)
+      val neTypes = argTyper.getNETypes(sentenceTokens, dontAdjustOffsets)
       var eid = 0
       val assignTypes = argTyper.assignTypes(neTypes) _
       sortedExtrInstances.flatMap(confExtrInstance => {
@@ -43,6 +43,7 @@ class RelgramTuplesExtractor(extractor:Extractor, argTyper:ArgumentsTyper) {
           }
           case _ => {
             logger.debug("Failed to extract head and assign types to extraction: " + extrInstance.extr.toString())
+            //println("Failed to extract head and assign types to extraction: " + extrInstance.extr.toString())
             None
           }
         }
@@ -75,12 +76,18 @@ class RelgramTuplesExtractor(extractor:Extractor, argTyper:ArgumentsTyper) {
   }
 
   def badOllieTuple(extrInstance: OllieExtractionInstance) = {
-    hasImposedPrepositions(extrInstance) || hasInvertedOrdering(extrInstance)
+    val out = hasImposedPrepositions(extrInstance) || hasInvertedOrdering(extrInstance)
+    //if (out) println("Bad ollie tuple: " + extrInstance.extr.toString)
+    out
   }
 
   def extractOllieInstances(sentence: String): Seq[(Double, OllieExtractionInstance)] = {
     extractor.extract(sentence)
-      .filter(confExtr => confExtr._1 > 0.1)
+      .filter(confExtr => {
+        val out = confExtr._1 > 0.1
+        //if (!out) println("Low confidence extraction: " + confExtr._1 + " low for " + confExtr._2.extr.toString)
+        out
+      })
       .filter(confExtr => !badOllieTuple(confExtr._2))
       .toSeq
       .sorted(new OllieExtractionOrdering)

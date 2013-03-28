@@ -47,16 +47,18 @@ class TypeSelectionMapper extends Mapper[LongWritable, Text, Text, Text] {
   val logger = LoggerFactory.getLogger(this.getClass)
   var extractor:Extractor = null
   var argTyper:ArgumentsTyper = null
-
+  var dontAdjustOffsets = false
   override def setup(context:Mapper[LongWritable,Text, Text, Text] #Context){
     val maltParserPath = context.getConfiguration.get("maltParserPath", "NA")
-    val neModelFile = context.getConfiguration.get("neModelFile", "NA")
+    val ne7ModelFile = context.getConfiguration.get("ne7ModelFile", "NA")
+    val ne3ModelFile = context.getConfiguration.get("ne3ModelFile", "NA")
+    dontAdjustOffsets = context.getConfiguration.getBoolean("dontAdjustOffsets", false)
     val wnHome = context.getConfiguration.get("wnHome", "NA")
     val wnTypesFile = context.getConfiguration.get("wnTypesFile", "NA")
     val numSenses = context.getConfiguration.getInt("numWNSenses", 1)
 
     extractor = new Extractor(maltParserPath)
-    argTyper = new ArgumentsTyper(neModelFile, wnHome, wnTypesFile, numSenses)
+    argTyper = new ArgumentsTyper(ne7ModelFile, ne3ModelFile, wnHome, wnTypesFile, numSenses)
   }
 
   override def map(key: LongWritable,
@@ -71,7 +73,7 @@ class TypeSelectionMapper extends Mapper[LongWritable, Text, Text, Text] {
         val extractions = extractor.extract(sentence)
         if (!extractions.isEmpty){
           val sentenceTokens = extractions.head._2.sentence.nodes.toSeq
-          val neTypes = argTyper.getNETypes(sentenceTokens).toSeq
+          val neTypes = argTyper.getNETypes(sentenceTokens, dontAdjustOffsets).toSeq
 
           val assignTypes = argTyper.assignTypes(neTypes) _
 
