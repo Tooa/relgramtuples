@@ -10,6 +10,7 @@ import edu.washington.cs.knowitall.tool.postag.PostaggedToken
 import org.slf4j.LoggerFactory
 import edu.washington.cs.knowitall.collection.immutable.Interval
 import edu.stanford.nlp.ie.AbstractSequenceClassifier
+import edu.washington.cs.knowitall.tool.parse.graph.DependencyNode
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,6 +21,7 @@ import edu.stanford.nlp.ie.AbstractSequenceClassifier
  */
 
 class MyStanfordNer(private val classifier: AbstractSequenceClassifier[_]) {//extends Typer[Token]("Stanford", "Stanford") {
+
 
   def apply(text: String, seq: Seq[Token], originalStarts:Map[Int, Int], originalEnds:Map[Int, Int]) = {
     import scala.collection.JavaConverters._
