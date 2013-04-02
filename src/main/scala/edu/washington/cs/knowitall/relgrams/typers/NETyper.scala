@@ -40,8 +40,8 @@ class MyStanfordNer(private val classifier: AbstractSequenceClassifier[_]) {//ex
     var tags = List.empty[Type]
 
     def endsMatch(tokenInterval:Interval, entityInterval:Interval):Boolean = {
-      if(tokenInterval.end == entityInterval.end) return true
-      if (tokenInterval.end-1 == entityInterval.end) return true
+      //if(tokenInterval.end == entityInterval.end) return true
+      if ((entityInterval.end >= tokenInterval.start) && (entityInterval.end <= tokenInterval.end)) return true
       return false
     }
     def startsMatch(tokenInterval:Interval, entityInterval:Interval):Boolean = tokenInterval.start == entityInterval.start
