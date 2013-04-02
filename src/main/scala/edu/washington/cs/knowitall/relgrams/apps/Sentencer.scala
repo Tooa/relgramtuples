@@ -43,6 +43,8 @@ object Sentencer {
     dir.listFiles()
       .filter(file => file.isFile)
       .map(infile => (infile, new File(outputDir, infile.getName)))
+      .toSeq
+      .par
       .foreach(inOutFiles => processFile(inOutFiles._1, inOutFiles._2))
   }
   def main(args:Array[String]){
