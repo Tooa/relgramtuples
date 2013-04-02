@@ -38,12 +38,20 @@ class MyStanfordNer(private val classifier: AbstractSequenceClassifier[_]) {//ex
     //println("Seq: " + seq.mkString("__"))
     val response = classifier.classifyToCharacterOffsets(text).asScala
     var tags = List.empty[Type]
+
+    def endsMatch(tokenInterval:Interval, entityInterval:Interval):Boolean = {
+      if(tokenInterval.end == entityInterval.end) return true
+      if (tokenInterval.end-1 == entityInterval.end) return true
+      return false
+    }
+    def startsMatch(tokenInterval:Interval, entityInterval:Interval):Boolean = tokenInterval.start == entityInterval.start
+
     for (triple <- response) {
       val nerInterval = Interval.open(triple.second, triple.third)
       val nerType = triple.first
       // find actual token offsets from NER offsets
-      val start = seq.find(_.interval.start == nerInterval.start).map(_.interval.start)
-      val end = seq.find(_.interval.end == nerInterval.end).map(_.interval.end)
+      val start = seq.find(token => startsMatch(token.interval, nerInterval)).map(_.interval.start)
+      val end = seq.find(token => endsMatch(token.interval, nerInterval)).map(_.interval.end)
       for (s <- start; e <- end) {
         val origInterval = Interval.open(s,e)
         val entityText = text.substring(nerInterval.start, nerInterval.end)
@@ -212,9 +220,10 @@ class NETyper(val ne7modelFile:String, ne3ModelFile:String) {
 
 
   def assignTypes(tokens:Seq[Token]):List[Type] = {
-    def isNotOrgPerLoc(typ: Type) = typ.name.startsWith("person") || typ.name.startsWith("organization") || typ.name.startsWith("location")
-    ne7typer(tokens).filter(typ => isNotOrgPerLoc(typ)).map(typ => rename(typ)) ++
-      ne3typer(tokens).map(typ => rename(typ))
+    def isNotOrgPerLoc(typ: Type) = !(typ.name.startsWith("person") || typ.name.startsWith("organization") || typ.name.startsWith("location"))
+    ne7typer(tokens).filter(typ => isNotOrgPerLoc(typ))
+                    .map(typ => rename(typ)) ++
+    ne3typer(tokens).map(typ => rename(typ))
   }
   /**def assignTypesToSentence(sentenceTokens:Seq[Token]) = {
     val (tokens, originalStarts, originalEnds) = preprocessTokens(sentenceTokens)
