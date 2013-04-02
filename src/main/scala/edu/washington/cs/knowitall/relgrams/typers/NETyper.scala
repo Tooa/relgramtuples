@@ -197,26 +197,5 @@ class NETyper(val ne7modelFile:String, ne3ModelFile:String) {
                     .map(typ => rename(typ)) ++
     ne3typer(tokens).map(typ => rename(typ))
   }
-  /**def assignTypesToSentence(sentenceTokens:Seq[Token]) = {
-    val (tokens, originalStarts, originalEnds) = preprocessTokens(sentenceTokens)
-    assignTypes(tokens, originalStarts, originalEnds)
-  }
-  def assignTypesToSentenceNoAdjustments(sentenceTokens:Seq[Token]) = {
-    val (tokens, originalStarts, originalEnds) = preprocessTokensDontAdjust(sentenceTokens)
-    assignTypes(tokens, originalStarts, originalEnds)
-  }
-
-
-  def assignTypes(tokens: Seq[Token], originalStarts: Map[Int, Int], originalEnds: Map[Int, Int]): List[Type] = {
-    val sentenceText = tokens.map(_.string).mkString(" ")
-    def isNotOrgPerLoc(typ: Type) = typ.name.startsWith("person") || typ.name.startsWith("organization") || typ.name.startsWith("location")
-    val types = ne7typer(tokens).filter(typ => isNotOrgPerLoc(typ)).map(typ => rename(typ)) ++ ne3typer(tokens).map(typ => rename(typ))
-
-/**    val types = ne7typer(sentenceText, tokens, originalStarts, originalEnds).filter(typ => isNotOrgPerLoc(typ)).map(typ => rename(typ)) ++
-      ne3typer(sentenceText, tokens, originalStarts, originalEnds).map(typ => rename(typ))*/
-    types
-  }  */
-
-
 
 }
