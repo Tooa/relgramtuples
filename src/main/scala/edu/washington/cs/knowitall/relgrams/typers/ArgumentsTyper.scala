@@ -36,7 +36,7 @@ class ArgumentsTyper(val ne7ModelFile:String, val ne3ModelFile:String, val wordn
   val personTyper = new PersonTyper
   val neTyper = new NETyper(ne7ModelFile, ne3ModelFile)
 
-  def getNETypes(sentenceTokens:Seq[Token], dontAdjustOffsets:Boolean) = if(!dontAdjustOffsets) neTyper.assignTypesToSentence(sentenceTokens) else neTyper.assignTypesToSentenceNoAdjustments(sentenceTokens)
+  def getNETypes(sentenceTokens:Seq[Token], dontAdjustOffsets:Boolean) = neTyper.assignTypes(sentenceTokens)//if(!dontAdjustOffsets) neTyper.assignTypes(sentenceTokens) else neTyper.assignTypesToSentenceNoAdjustments(sentenceTokens)
 
   val conjunctions = new HashSet[String]
  // conjunctions += "for"

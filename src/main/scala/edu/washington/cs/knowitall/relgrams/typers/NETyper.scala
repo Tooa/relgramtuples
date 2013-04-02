@@ -23,7 +23,41 @@ import edu.washington.cs.knowitall.tool.parse.graph.DependencyNode
 class MyStanfordNer(private val classifier: AbstractSequenceClassifier[_]) {//extends Typer[Token]("Stanford", "Stanford") {
 
 
-  def apply(text: String, seq: Seq[Token], originalStarts:Map[Int, Int], originalEnds:Map[Int, Int]) = {
+  def buildString(nodes: Iterable[Token]) = {
+      val builder = new StringBuilder()
+      for (node <- nodes) {
+        builder.append(" " * (node.offset - builder.length))
+        builder.append(node.string)
+      }
+      builder.toString()
+  }
+
+  def apply(text: String, seq: Seq[Token]): List[Type] = {
+    import scala.collection.JavaConverters._
+    //println("Text: " + text)
+    //println("Seq: " + seq.mkString("__"))
+    val response = classifier.classifyToCharacterOffsets(text).asScala
+    var tags = List.empty[Type]
+    for (triple <- response) {
+      val nerInterval = Interval.open(triple.second, triple.third)
+      val nerType = triple.first
+      // find actual token offsets from NER offsets
+      val start = seq.find(_.interval.start == nerInterval.start).map(_.interval.start)
+      val end = seq.find(_.interval.end == nerInterval.end).map(_.interval.end)
+      for (s <- start; e <- end) {
+        val origInterval = Interval.open(s,e)
+        val entityText = text.substring(nerInterval.start, nerInterval.end)
+        val typ = new Type("Stanford" + nerType, "Stanford", origInterval, entityText)
+        tags ::= typ
+      }
+    }
+    if (tags.size != response.size){
+      println("#Tags = %d but #Entities = %d\ntext: %s\nnerIntervals: %s\nTokens: %s".format(tags.size, response.size, text, response.map(x => x.first + ":" + x.second + "_" + x.third).mkString(","), seq.map(y => y.string + ":" + y.interval)))
+    }
+    tags
+  }
+
+ /** def apply(text: String, seq: Seq[Token], originalStarts:Map[Int, Int], originalEnds:Map[Int, Int]) = {
     import scala.collection.JavaConverters._
 
     val response = classifier.classifyToCharacterOffsets(text).asScala
@@ -46,8 +80,9 @@ class MyStanfordNer(private val classifier: AbstractSequenceClassifier[_]) {//ex
       println("#Tags = %d but #Entities = %d\ntext: %s\nnerIntervals: %s\nTokens: %s".format(tags.size, response.size, text, response.map(x => x.first + ":" + x.second + "_" + x.third).mkString(","), seq.map(y => y.string + ":" + y.interval)))
     }
     tags
-  }
+  } */
 
+  def apply(nodes:Seq[Token]) : List[Type] = apply(buildString(nodes), nodes)
   //def apply(seq: Seq[Token], originalStarts:Map[Int, Int], originalEnds:Map[Int, Int]) = apply(seq.iterator.map(_.string).mkString(" "), seq, originalStarts, originalEnds)
 }
 object NETyper{
@@ -176,7 +211,12 @@ class NETyper(val ne7modelFile:String, ne3ModelFile:String) {
   }
 
 
-  def assignTypesToSentence(sentenceTokens:Seq[Token]) = {
+  def assignTypes(tokens:Seq[Token]):List[Type] = {
+    def isNotOrgPerLoc(typ: Type) = typ.name.startsWith("person") || typ.name.startsWith("organization") || typ.name.startsWith("location")
+    ne7typer(tokens).filter(typ => isNotOrgPerLoc(typ)).map(typ => rename(typ)) ++
+      ne3typer(tokens).map(typ => rename(typ))
+  }
+  /**def assignTypesToSentence(sentenceTokens:Seq[Token]) = {
     val (tokens, originalStarts, originalEnds) = preprocessTokens(sentenceTokens)
     assignTypes(tokens, originalStarts, originalEnds)
   }
@@ -189,10 +229,12 @@ class NETyper(val ne7modelFile:String, ne3ModelFile:String) {
   def assignTypes(tokens: Seq[Token], originalStarts: Map[Int, Int], originalEnds: Map[Int, Int]): List[Type] = {
     val sentenceText = tokens.map(_.string).mkString(" ")
     def isNotOrgPerLoc(typ: Type) = typ.name.startsWith("person") || typ.name.startsWith("organization") || typ.name.startsWith("location")
-    val types = ne7typer(sentenceText, tokens, originalStarts, originalEnds).filter(typ => isNotOrgPerLoc(typ)).map(typ => rename(typ)) ++
-      ne3typer(sentenceText, tokens, originalStarts, originalEnds).map(typ => rename(typ))
+    val types = ne7typer(tokens).filter(typ => isNotOrgPerLoc(typ)).map(typ => rename(typ)) ++ ne3typer(tokens).map(typ => rename(typ))
+
+/**    val types = ne7typer(sentenceText, tokens, originalStarts, originalEnds).filter(typ => isNotOrgPerLoc(typ)).map(typ => rename(typ)) ++
+      ne3typer(sentenceText, tokens, originalStarts, originalEnds).map(typ => rename(typ))*/
     types
-  }
+  }  */
 
 
 
