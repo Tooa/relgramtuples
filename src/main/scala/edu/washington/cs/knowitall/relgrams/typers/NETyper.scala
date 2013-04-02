@@ -34,18 +34,15 @@ class MyStanfordNer(private val classifier: AbstractSequenceClassifier[_]) {//ex
 
   def apply(text: String, seq: Seq[Token]): List[Type] = {
     import scala.collection.JavaConverters._
-    //println("Text: " + text)
-    //println("Seq: " + seq.mkString("__"))
     val response = classifier.classifyToCharacterOffsets(text).asScala
     var tags = List.empty[Type]
 
-    def endsMatch(tokenInterval:Interval, entityInterval:Interval):Boolean = {
-      //if(tokenInterval.end == entityInterval.end) return true
-      if ((entityInterval.end >= tokenInterval.start) && (entityInterval.end <= tokenInterval.end)) return true
-      return false
+    def startsMatch(tokenInterval:Interval, entityInterval:Interval):Boolean = {
+      (entityInterval.start >= tokenInterval.start) && (entityInterval.start <= tokenInterval.end)
     }
-    def startsMatch(tokenInterval:Interval, entityInterval:Interval):Boolean = tokenInterval.start == entityInterval.start
-
+    def endsMatch(tokenInterval:Interval, entityInterval:Interval):Boolean = {
+      (entityInterval.end >= tokenInterval.start) && (entityInterval.end <= tokenInterval.end)
+    }
     for (triple <- response) {
       val nerInterval = Interval.open(triple.second, triple.third)
       val nerType = triple.first
@@ -65,33 +62,8 @@ class MyStanfordNer(private val classifier: AbstractSequenceClassifier[_]) {//ex
     tags
   }
 
- /** def apply(text: String, seq: Seq[Token], originalStarts:Map[Int, Int], originalEnds:Map[Int, Int]) = {
-    import scala.collection.JavaConverters._
-
-    val response = classifier.classifyToCharacterOffsets(text).asScala
-
-    var tags = List.empty[Type]
-    for (triple <- response) {
-      val nerInterval = Interval.open(triple.second, triple.third)
-      val nerType = triple.first
-      // find actual token offsets from NER offsets
-      val start = seq.find(_.interval.start == nerInterval.start).map(_.interval.start)
-      val end = seq.find(_.interval.end == nerInterval.end).map(_.interval.end)
-      for (s <- start; e <- end) {
-        val origInterval = Interval.open(originalStarts(s), originalEnds(e))
-        val entityText = text.substring(nerInterval.start, nerInterval.end)
-        val typ = new Type("Stanford" + nerType, "Stanford", origInterval, entityText)
-        tags ::= typ
-      }
-    }
-    if (tags.size != response.size){
-      println("#Tags = %d but #Entities = %d\ntext: %s\nnerIntervals: %s\nTokens: %s".format(tags.size, response.size, text, response.map(x => x.first + ":" + x.second + "_" + x.third).mkString(","), seq.map(y => y.string + ":" + y.interval)))
-    }
-    tags
-  } */
-
   def apply(nodes:Seq[Token]) : List[Type] = apply(buildString(nodes), nodes)
-  //def apply(seq: Seq[Token], originalStarts:Map[Int, Int], originalEnds:Map[Int, Int]) = apply(seq.iterator.map(_.string).mkString(" "), seq, originalStarts, originalEnds)
+
 }
 object NETyper{
   def fromModelUrl(file: File) = {
