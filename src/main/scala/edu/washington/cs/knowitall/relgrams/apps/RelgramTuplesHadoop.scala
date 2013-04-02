@@ -88,12 +88,14 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
                    context: Mapper[LongWritable,Text, Text, Text] #Context) {
     try{
       val splits = value.toString.split("\t")
-      if(splits.size > 4){
-        val docid = splits(2)
-        val sentid = splits(3).toInt
-        val sentence = splits(4)
-        val relgramTuples = tuplesExtractor.extract(docid, sentid, sentence)
-        relgramTuples.foreach(relgramTuple => exportRelgramTuple(relgramTuple, context))
+      if(splits.size > 3){
+        val docid = splits(0)
+        val sentid = splits(1).toInt
+        val sentence = splits(2)
+        if (splits(3).equals("story")){
+          val relgramTuples = tuplesExtractor.extract(docid, sentid, sentence)
+          relgramTuples.foreach(relgramTuple => exportRelgramTuple(relgramTuple, context))
+        }
       }else{
         logger.error("Skipping line with < 6 fields: " + splits.size + " and string: " + splits.mkString("_,_"))
       }

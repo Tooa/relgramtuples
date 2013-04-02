@@ -144,11 +144,6 @@ class ArgumentsTyper(val ne7ModelFile:String, val ne3ModelFile:String, val wordn
       somematch |= out
       out
     })
-    /**if (types.size > 0 && !somematch) {
-      println("No Match for: " + tokens.map(x => x.string + ':' + x.interval) + " from types: " + types.map(t => t.text + ':' + t.interval).mkString(","))
-    }else if (types.size > 0 && somematch){
-      println("Matching types for: " + tokens.map(x => x.string + ':' + x.interval) + " from types: " + filteredTypes.map(t => t.text + ':' + t.interval).mkString(","))
-    } */
     filteredTypes
   }
 
