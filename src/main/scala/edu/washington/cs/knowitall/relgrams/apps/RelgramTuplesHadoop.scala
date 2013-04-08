@@ -123,6 +123,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
     val sentence = relgramTuple.sentence
     val extrid = relgramTuple.extrid
     val hashes = relgramTuple.hashes
+    val confidence = relgramTuple.confidence
 
     //val origTuple = "%s\t%s\t%s".format(typedExtractionInstance.extractionInstance.extr.anew Type("person", "Pronoun", argTokens(0).interval, argTokens(0).string)::Nilrg1.text, typedExtractionInstance.extractionInstance.extr.rel.text,
     //  typedExtractionInstance.extractionInstance.extr.arg2.text)
@@ -146,7 +147,7 @@ class RelgramTuplesMapper extends Mapper[LongWritable, Text, Text, Text] {
 
     def typesString(types:Iterable[Type]) = types.map(t => "Type:" + t.name).mkString(",")//"Type:" + t.name + ":" + t.source).mkString(",")
     val key = "%s\t%s\t%s\t%d".format(docid, sentid, sentence, extrid)
-    val value = "%s\t%s\t%s\t%s\t%s".format(hashes.mkString(","), origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types))
+    val value = "%s\t%s\t%s\t%s\t%s\t%.6f".format(hashes.mkString(","), origTuple, headTuple, typesString(typedExtractionInstance.arg1Types), typesString(typedExtractionInstance.arg2Types), confidence)
     context.write(new Text(key), new Text(value))
   }
 }

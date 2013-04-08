@@ -16,7 +16,8 @@ import edu.washington.cs.knowitall.relgrams.typers.TypedExtractionInstance
 case class RelgramTuple(docid:String, sentid:Int, extrid:Int,
                         sentence:String,
                         hashes:Iterable[Int],
-                        typedExtrInstance:TypedExtractionInstance) {
+                        typedExtrInstance:TypedExtractionInstance,
+                        confidence:Double) {
 
 
 }
