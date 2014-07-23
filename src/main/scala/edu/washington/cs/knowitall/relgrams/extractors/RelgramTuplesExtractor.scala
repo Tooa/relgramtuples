@@ -18,7 +18,9 @@ import edu.washington.cs.knowitall.tool.parse.graph.DependencyNode
 import edu.washington.cs.knowitall.tool.typer.Type
 import edu.washington.cs.knowitall.collection.immutable.Interval
 
-class RelgramTuplesExtractor(extractor:Extractor, argTyper:ArgumentsTyper, dontAdjustOffsets:Boolean) {
+class RelgramTuplesExtractor(extractor:Extractor,
+   argTyper:ArgumentsTyper, dontAdjustOffsets:Boolean,
+   confidenceThreshold: Double = 0.1, removeInvertedExtractions: Boolean = true, removeInferredPrepExtractions: Boolean = true) {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -76,7 +78,8 @@ class RelgramTuplesExtractor(extractor:Extractor, argTyper:ArgumentsTyper, dontA
   }
 
   def badOllieTuple(extrInstance: OllieExtractionInstance) = {
-    val out = hasImposedPrepositions(extrInstance) || hasInvertedOrdering(extrInstance)
+    val out = (!removeInferredPrepExtractions || hasImposedPrepositions(extrInstance)) &&
+      (!removeInvertedExtractions || hasInvertedOrdering(extrInstance))
     //if (out) println("Bad ollie tuple: " + extrInstance.extr.toString)
     out
   }
@@ -84,7 +87,7 @@ class RelgramTuplesExtractor(extractor:Extractor, argTyper:ArgumentsTyper, dontA
   def extractOllieInstances(sentence: String): Seq[(Double, OllieExtractionInstance)] = {
     extractor.extract(sentence)
       .filter(confExtr => {
-        val out = confExtr._1 > 0.1
+        val out = confExtr._1 > confidenceThreshold
         //if (!out) println("Low confidence extraction: " + confExtr._1 + " low for " + confExtr._2.extr.toString)
         out
       })
