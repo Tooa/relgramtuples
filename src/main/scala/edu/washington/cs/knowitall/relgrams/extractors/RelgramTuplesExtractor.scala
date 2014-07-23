@@ -39,7 +39,7 @@ class RelgramTuplesExtractor(extractor:Extractor,
         val extrInstance = confExtrInstance._2
         assignTypes(extrInstance) match {
           case Some(typedExtrInstance: TypedExtractionInstance) => {
-            val relgramTuple = new RelgramTuple(docid, sentid, eid, sentence, hashes, typedExtrInstance)
+            val relgramTuple = new RelgramTuple(docid, sentid, eid, sentence, hashes, typedExtrInstance, confidence)
             eid = eid + 1
             Some(relgramTuple)
           }
