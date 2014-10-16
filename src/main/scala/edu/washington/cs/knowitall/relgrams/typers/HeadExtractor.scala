@@ -9,14 +9,7 @@ package edu.washington.cs.knowitall.relgrams.typers
  */
 
 
-
-
-import scala.collection.JavaConversions._
-
-import edu.washington.cs.knowitall.relgrams.utils.Pairable
-import collection.mutable.{HashSet, ArrayBuffer}
-import java.lang.String
-import edu.washington.cs.knowitall.normalization.NormalizedField
+import collection.mutable.ArrayBuffer
 import edu.washington.cs.knowitall.tool.postag.PostaggedToken
 import collection.mutable
 import scala.Predef._
@@ -24,7 +17,6 @@ import scala.Some
 
 import edu.washington.cs.knowitall.tool.stem.MorphaStemmer
 import io.Source
-import edu.washington.cs.knowitall.tool.tokenize.Token
 import org.slf4j.LoggerFactory
 
 /**
@@ -35,20 +27,27 @@ import org.slf4j.LoggerFactory
  * To change this template use File | Settings | File Templates.
  */
 
-object HeadExtractor {
+object HeadExtractor{
+
+  def main(args:Array[String]){
+    val headExtractor = new HeadExtractor(args(0))
+    val testCasesFile = args(1)
+    Source.fromFile(testCasesFile).getLines.foreach(line => {
+      val splits = line.split("\t")
+      val argText = splits(0)
+      val argPosTags = splits(1)
+      headExtractor.argumentHead(argText, argPosTags) match {
+        case Some(head:Seq[PostaggedToken]) => println("Head(%s)=%s".format(argText, head.map(_.string).mkString(" ")))
+        case None => println("Head(%s)=%s".format(argText, ""))
+      }
+    })
+  }
+
+}
+class HeadExtractor(wnHome:String) {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  def main(args:Array[String]){
-    val testCasesFile = args(0)
-    Source.fromFile(testCasesFile).getLines.foreach(line => {
-      val splits = line.split("\t")
-      val arg1Text = splits(0)
-      val arg1PosTags = splits(1)
-      println("Line: " + line)
-      println("Head(%s)=%s".format(arg1Text, lemmatizedArgumentHead(arg1Text, arg1PosTags)))
-    })
-  }
 
   val stopPosTagsString = "MD,JJ,JJR,JJS,RB,RBR,RBS,CC,UH,PRP,PRP$,DT,WP,WP$,WRB,CD"
   val stopTagsForRelation = stopPosTagsString.split(",").toSet
@@ -136,12 +135,7 @@ object HeadExtractor {
     }
   }
 
-  var wnHome = "/home/niranjan/local/wordnet3.0"
   var wnTypers = new mutable.HashMap[Thread, WordNetTyper] with mutable.SynchronizedMap[Thread, WordNetTyper]
-  def setWnHome(wnHomeInp:String){
-    wnHome = wnHomeInp
-  }
-
 
   def findNPofNP(tokens:Seq[PostaggedToken]):Seq[PostaggedToken] = {
 

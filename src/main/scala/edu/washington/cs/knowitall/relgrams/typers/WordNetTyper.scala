@@ -16,7 +16,6 @@ import knowitall.wordnetdemo.JwiTools
 import edu.mit.jwi.item.{IIndexWord, Pointer, POS, ISynset}
 import io.Source
 import knowitall.tool.WNDictionary
-import opennlp.tools.postag.{POSTagger, POSTaggerME}
 import java.io.File
 import collection.mutable
 import edu.washington.cs.knowitall.tool.postag.PostaggedToken
@@ -24,9 +23,6 @@ import edu.mit.jwi.morph.WordnetStemmer
 import edu.washington.cs.knowitall.tool.typer.Type
 import org.slf4j.LoggerFactory
 
-//import edu.washington.cs.knowitall.relink.typing.NoType
-import edu.washington.cs.knowitall.ollie.OllieExtractionInstance
-import edu.washington.cs.knowitall.tool.tokenize.Token
 import edu.washington.cs.knowitall.collection.immutable.Interval
 
 
@@ -362,7 +358,6 @@ class WordNetTyper {
       logger.error("Type file is not a valid file: " + typesFile)
     }
     logger.info("Number of wordnet types: " + types.size)
-    println("Number of wordnet types: " + types.size)
   }
 
 
