@@ -9,13 +9,13 @@ package edu.washington.cs.knowitall.relgrams.typers
  */
 
 
+import edu.washington.cs.knowitall.relgrams.utils.JwiTools
+import edu.washington.cs.knowitall.relgrams.utils.tool.WNDictionary
 
 import scala.collection.JavaConversions._
 import collection.mutable.ArrayBuffer
-import knowitall.wordnetdemo.JwiTools
 import edu.mit.jwi.item.{IIndexWord, Pointer, POS, ISynset}
 import io.Source
-import knowitall.tool.WNDictionary
 import java.io.File
 import collection.mutable
 import edu.washington.cs.knowitall.tool.postag.PostaggedToken

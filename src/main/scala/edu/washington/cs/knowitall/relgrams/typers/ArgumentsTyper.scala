@@ -30,7 +30,9 @@ class ArgumentsTyper(val ne7ModelFile:String, val ne3ModelFile:String, val wordn
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  HeadExtractor.setWnHome(wordnetLocation)
+
+  val extractor = new HeadExtractor(wordnetLocation)
+  //HeadExtractor.setWnHome(wordnetLocation)
   val wnTyper = new WordNetTyper(wordnetLocation, wordnetTypesFile, (1 until wnSenses+1), true, false)
   val prnTyper = new PronounTyper
   val personTyper = new PersonTyper
@@ -77,9 +79,9 @@ class ArgumentsTyper(val ne7ModelFile:String, val ne3ModelFile:String, val wordn
     val arg1Tokens = extractionInstance.extr.arg1.nodes.toSeq
     val arg2Tokens = extractionInstance.extr.arg2.nodes.toSeq
     val relTokens = addMissingTokens(extractionInstance.extr.rel)
-    val arg1HeadTokensOption = HeadExtractor.argumentHead(arg1Tokens)
-    val arg2HeadTokensOption = HeadExtractor.argumentHead(arg2Tokens)
-    val relHeadTokensOption = HeadExtractor.relHead(relTokens)
+    val arg1HeadTokensOption = extractor.argumentHead(arg1Tokens)
+    val arg2HeadTokensOption = extractor.argumentHead(arg2Tokens)
+    val relHeadTokensOption = extractor.relHead(relTokens)
 
     (arg1HeadTokensOption, relHeadTokensOption, arg2HeadTokensOption) match {
       case (Some(arg1HeadTokens:Seq[PostaggedToken]),
@@ -88,9 +90,9 @@ class ArgumentsTyper(val ne7ModelFile:String, val ne3ModelFile:String, val wordn
         val arg1Types = assignTypes(arg1HeadTokens, neTypes)
         val arg2Types = assignTypes(arg2HeadTokens, neTypes)
         Some(new TypedExtractionInstance(extractionInstance,
-          HeadExtractor.lemmatize(arg1HeadTokens),
-          HeadExtractor.lemmatize(relHeadTokens),
-          HeadExtractor.lemmatize(arg2HeadTokens),
+          extractor.lemmatize(arg1HeadTokens),
+          extractor.lemmatize(relHeadTokens),
+          extractor.lemmatize(arg2HeadTokens),
           arg1Types, arg2Types))
       }
       case _ => {
@@ -146,7 +148,4 @@ class ArgumentsTyper(val ne7ModelFile:String, val ne3ModelFile:String, val wordn
     })
     filteredTypes
   }
-
-
-
 }

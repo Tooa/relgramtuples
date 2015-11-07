@@ -71,11 +71,11 @@
     </pluginRepositories>
     <dependencies>
 
-        <dependency>
+        <!--<dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>2.9.2</version>
-        </dependency>
+        </dependency>-->
 
         <!-- Vestigial depdenencies. -->
         <!--dependency>
@@ -112,11 +112,6 @@
             <version>0.0.1-SNAPSHOT</version>
         </dependency-->
 
-        <dependency>
-            <groupId>knowitall</groupId>
-            <artifactId>wordnet-demo</artifactId>
-            <version>1.0</version>
-        </dependency>
 
         <!-- NLP tools and their models. -->
 
@@ -212,6 +207,12 @@
             <version>1.5.2</version>
             <type>war</type>
         </dependency>
+        <!-- jwi -->
+        <dependency>
+            <groupId>edu.mit</groupId>
+            <artifactId>jwi</artifactId>
+            <version>2.2.3</version>
+        </dependency>
 
         <!-- Scala -->
 
@@ -229,7 +230,7 @@
 
         <!-- Graph algorithms -->
         <dependency>
-            <groupId>jgrapht</groupId>
+            <groupId>net.sf.jgrapht</groupId>
             <artifactId>jgrapht</artifactId>
             <version>0.8.3</version>
         </dependency>
@@ -247,14 +248,13 @@
             <artifactId>extjwnl</artifactId>
             <version>1.5</version>
         </dependency>
-
-
-        <dependency>
+        
+        <!-- not available via maven -->
+        <!--<dependency>
             <groupId>knowitall</groupId>
             <artifactId>wordnet-demo</artifactId>
             <version>1.0</version>
-        </dependency>
-
+        </dependency>-->
 
     </dependencies>
 

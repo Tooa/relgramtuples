@@ -156,8 +156,8 @@ class HeadExtractor(wnHome:String) {
         return tokens.drop(leadingOfIndex+1)
       }
 
-      var leadingNPs = tokens.take(leadingOfIndex).filter(x => x.isNoun)
-      var trailingNPs = tokens.drop(leadingOfIndex+1).filter(x => x.isNoun)
+      val leadingNPs = tokens.take(leadingOfIndex).filter(x => x.isNoun)
+      val trailingNPs = tokens.drop(leadingOfIndex + 1).filter(x => x.isNoun)
       if (leadingNPs.find(x => !x.isProperNoun) == None){
         return tokens
       }
