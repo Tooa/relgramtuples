@@ -41,8 +41,8 @@ class Extractor {
 
   def extract(sentence:String) = {
     val dgraph: DependencyGraph = parser.dependencyGraph(sentence)
-    ollieExtractor.extract(dgraph).map(extr => (confFunction.getConf(extr), extr)).toSeq
-
+    val res = ollieExtractor.extract(dgraph).map(extr => (confFunction.getConf(extr), extr)).toSeq
+    res
   }
 
   def main(args:Array[String]){

@@ -136,8 +136,8 @@ object DayTyper{
 }
 class NETyper(val ne7modelFile:String, ne3ModelFile:String) {
   import NETyper._
-  val ne3typer = fromModelUrl(new File(ne3ModelFile))
   val ne7typer = fromModelUrl(new File(ne7modelFile))
+  val ne3typer = fromModelUrl(new File(ne3ModelFile))
 
   def rename(old: Type): Type = {
     var newName = old.name.replaceAll("""Stanford""", "").toLowerCase

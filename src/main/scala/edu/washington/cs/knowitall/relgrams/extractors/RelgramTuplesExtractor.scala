@@ -80,19 +80,21 @@ class RelgramTuplesExtractor(extractor:Extractor,
   def badOllieTuple(extrInstance: OllieExtractionInstance) = {
     val out = (!removeInferredPrepExtractions || hasImposedPrepositions(extrInstance)) &&
       (!removeInvertedExtractions || hasInvertedOrdering(extrInstance))
-    //if (out) println("Bad ollie tuple: " + extrInstance.extr.toString)
+    if (out) println("Bad ollie tuple: " + extrInstance.extr.toString)
     out
   }
 
   def extractOllieInstances(sentence: String): Seq[(Double, OllieExtractionInstance)] = {
-    extractor.extract(sentence)
+    val res = extractor.extract(sentence)
       .filter(confExtr => {
         val out = confExtr._1 > confidenceThreshold
-        //if (!out) println("Low confidence extraction: " + confExtr._1 + " low for " + confExtr._2.extr.toString)
+        if (!out) println("Low confidence extraction: " + confExtr._1 + " low for " + confExtr._2.extr.toString)
         out
       })
-      .filter(confExtr => !badOllieTuple(confExtr._2))
+      //TODO: I'm actually not sure atm what this call considers a bad tuple
+      //.filter(confExtr => !badOllieTuple(confExtr._2))
       .toSeq
       .sorted(new OllieExtractionOrdering)
+    res
   }
 }

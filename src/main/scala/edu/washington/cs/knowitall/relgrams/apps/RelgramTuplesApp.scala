@@ -18,19 +18,19 @@ import edu.washington.cs.knowitall.tool.typer.Type
  */
 
 
-object RelgramTuplesApp{
+object RelgramTuplesApp {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
   def main(args:Array[String]) {
 
     var inputPath, outputPath = ""
-    var wnHome = "/home/niranjan/local/Wordnet3.0"
-    var wnTypesFile = "wordnet-classes-large.txt"
-    var ne7ModelFile = "/Users/niranjan/work/projects/git/scala/argtyping/src/main/resources/english.muc.7class.nodistsim.prop"
-    var ne3ModelFile = "/Users/niranjan/work/projects/git/scala/argtyping/src/main/resources/english.all.3class.nodistsim.prop"
+    var wnHome = "src/main/resources/WordNet-3.0/"
+    var wnTypesFile = "src/main/resources/wordnet-classes-large.txt"
+    var ne7ModelFile = "src/main/resources/english.muc.7class.nodistsim.crf.ser.gz"
+    var ne3ModelFile = "src/main/resources/english.all.3class.nodistsim.crf.ser.gz"
     var dontAdjustOffsets = false
-    var maltParserPath="/Users/niranjan/work/projects/git/relgrams/relgramtuples/src/main/resources/engmalt.linear-1.7.mco"
+    var maltParserPath="src/main/resources/engmalt.linear-1.7.mco"
     var removeInvertedExtractions = false
     var removeImposedPrepExtractions = false
     var confidenceThreshold = 0.1
